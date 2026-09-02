@@ -11,7 +11,7 @@ Sistema de gestión de alumnos y cursos para la jornada formativa de Bunker4.
 
 ## Estado
 
-Este repositorio contiene la documentación inicial (PRD, PLAN, AGENTS) y un placeholder (`hola_mundo.py`). El esqueleto de código se incorpora en una etapa posterior.
+Este repositorio contiene la documentación inicial (PRD, PLAN, AGENTS, requirements). El archivo "propuesta_frontend.md" es sólo eso, una propuesta. El esqueleto de código se incorpora en una etapa posterior.
 
 Para el detalle de producto leer [PRD.md](./PRD.md).
 Para el plan de implementación leer [PLAN.md](./PLAN.md).
@@ -138,17 +138,17 @@ direnv allow
 
 ## Comandos útiles
 
-| Acción | Comando |
-|--------|---------|
-| Activar env | `conda activate py3.12` |
-| Salir del env | `conda deactivate` |
-| Levantar DB | `docker compose up -d` |
-| Bajar DB | `docker compose down` |
-| Resetear DB (borra datos) | `docker compose down -v` |
-| Logs de DB | `docker compose logs -f postgres` |
-| Tests | `pytest` (cuando existan) |
-| Lint | `ruff check .` (cuando exista config) |
-| Formato | `ruff format .` |
+| Acción                    | Comando                               |
+| ------------------------- | ------------------------------------- |
+| Activar env               | `conda activate py3.12`               |
+| Salir del env             | `conda deactivate`                    |
+| Levantar DB               | `docker compose up -d`                |
+| Bajar DB                  | `docker compose down`                 |
+| Resetear DB (borra datos) | `docker compose down -v`              |
+| Logs de DB                | `docker compose logs -f postgres`     |
+| Tests                     | `pytest` (cuando existan)             |
+| Lint                      | `ruff check .` (cuando exista config) |
+| Formato                   | `ruff format .`                       |
 
 ## Nota sobre Postgres embebido vs Docker
 
