@@ -22,6 +22,8 @@
 | **Lint/Format** | ruff | Rápido, unificado (lint + format) |
 | **Type checking** | mypy (strict) | Catch errores en CI |
 | **DB local** | Docker Compose (postgres:16) | Consistente, portable, sin instalar local |
+| **DB remoto** | PostgreSQL 16 en Proxmox | Producción/staging, conexión via SSH tunnel o VPN |
+| **Config DB** | pydantic-settings + `.env` por entorno | `DATABASE_URL` distinta por ambiente (local/remoto) |
 
 ---
 
@@ -471,6 +473,7 @@ proyecto_padawans/
 | SQLAlchemy 2.0 async vs sync mix | Usar **solo async** desde Fase 1; `AsyncSession`, `async_engine` |
 | `asyncpg` vs `psycopg[binary]` | Elegido `psycopg[binary]`; wheel binario, sin compilar |
 | Postgres local vs Docker | Docker obligatorio en README; `.env.example` apunta a Docker |
+| Dos ambientes DB (local Docker + remoto Proxmox) | `DATABASE_URL` vía `.env` por entorno; migraciones corren en ambos; CI usa local Docker |
 | Hard delete accidental | Soft delete en modelos; tests verifican propagación baja |
 | Cupos excedidos en concurrencia | Transacción con `SELECT ... FOR UPDATE` en service inscripción |
 | JWT secret débil | `SECRET_KEY` generado con `openssl rand -hex 32` en `.env.example` |

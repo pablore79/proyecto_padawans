@@ -11,17 +11,29 @@ Sistema de gestión de alumnos y cursos para la jornada formativa de Bunker4.
 
 ## Estado
 
-Este repositorio contiene la documentación inicial (PRD, PLAN, AGENTS, requirements). El archivo "propuesta_frontend.md" es sólo eso, una propuesta. El esqueleto de código se incorpora en una etapa posterior.
+Este repositorio contiene la documentación inicial (PRD, PLAN, AGENTS, requirements). El esqueleto de código se incorpora en una etapa posterior.
 
 Para el detalle de producto leer [PRD.md](./PRD.md).
 Para el plan de implementación leer [PLAN.md](./PLAN.md).
 Para reglas de trabajo de agentes leer [AGENTS.md](./AGENTS.md).
 
+## Arquitectura de Base de Datos
+
+El proyecto soporta **dos ambientes de base de datos**:
+
+| Entorno | Descripción | Conexión |
+|---------|-------------|----------|
+| **Local (Docker)** | PostgreSQL 16 via Docker Compose | `postgresql+psycopg://...@localhost:5432/...` |
+| **Remoto (Proxmox)** | PostgreSQL 16 en servidor Proxmox (prod/staging) | SSH tunnel / VPN + `DATABASE_URL` en `.env` |
+
+Ambos ambientes usan la misma cadena de migraciones (Alembic). La variable `DATABASE_URL` en `.env` determina el target.
+
 ## Prerrequisitos
 
 1. **Conda** instalado (Miniconda o Anaconda).
-2. **Docker** + **Docker Compose** (para PostgreSQL y opcionalmente adminer/pgadmin).
+2. **Docker** + **Docker Compose** (para PostgreSQL local).
 3. **Git**.
+4. **Acceso al servidor Proxmox** (SSH/VPN) para ambiente remoto — solo necesario para deploy a staging/producción.
 
 ## Deploy / Setup local
 
@@ -41,9 +53,9 @@ conda create -n py3.12 python=3.12
 conda activate py3.12
 ```
 
-### 3. Levantar PostgreSQL con Docker Compose
+### 3. Levantar PostgreSQL Local con Docker Compose
 
-El sistema requiere PostgreSQL 16. Se provee `docker-compose.yml` (a incorporar con el esqueleto) que levanta:
+El entorno local usa PostgreSQL 16 via Docker Compose. Se provee `docker-compose.yml` que levanta:
 
 - `postgres:16` en el puerto `5432`
 - (opcional) adminer o pgadmin en `8080`/`5050`
@@ -53,6 +65,8 @@ Desde la raíz del proyecto:
 ```bash
 docker compose up -d
 ```
+
+Para el **entorno remoto (Proxmox)**, no se usa Docker Compose. La conexión se hace via SSH tunnel o VPN apuntando al servidor PostgreSQL 16 en Proxmox, y la `DATABASE_URL` en `.env` apunta a esa conexión.
 
 ### 4. Instalar dependencias del proyecto
 
@@ -76,12 +90,20 @@ Copiar `.env.example` a `.env` (ambos archivos se incorporan con el esqueleto):
 cp .env.example .env
 ```
 
-Valores típicos:
+Valores típicos por entorno:
 
+**Local (Docker):**
 ```
 DATABASE_URL=postgresql+psycopg://bunker4:bunker4@localhost:5432/bunker4
 SECRET_KEY=<generar-con-openssl-rand-hex-32>
 ENVIRONMENT=local
+```
+
+**Remoto (Proxmox via SSH tunnel):**
+```
+DATABASE_URL=postgresql+psycopg://user:pass@localhost:5433/bunker4
+SECRET_KEY=<generar-con-openssl-rand-hex-32>
+ENVIRONMENT=staging
 ```
 
 ### 6. Aplicar migraciones (cuando existan)
@@ -142,17 +164,22 @@ direnv allow
 | ------------------------- | ------------------------------------- |
 | Activar env               | `conda activate py3.12`               |
 | Salir del env             | `conda deactivate`                    |
-| Levantar DB               | `docker compose up -d`                |
-| Bajar DB                  | `docker compose down`                 |
-| Resetear DB (borra datos) | `docker compose down -v`              |
-| Logs de DB                | `docker compose logs -f postgres`     |
+| Levantar DB (local)       | `docker compose up -d`                |
+| Bajar DB (local)          | `docker compose down`                 |
+| Resetear DB local (borra datos) | `docker compose down -v`        |
+| Logs DB local             | `docker compose logs -f postgres`     |
+| Migraciones (ambos)       | `alembic upgrade head`                |
 | Tests                     | `pytest` (cuando existan)             |
 | Lint                      | `ruff check .` (cuando exista config) |
 | Formato                   | `ruff format .`                       |
 
-## Nota sobre Postgres embebido vs Docker
+## Nota sobre ambientes de Base de Datos
 
-Si no querés usar Docker y ya tenés Postgres 16 instalado localmente, podés crear la DB y usuario manualmente y apuntar `DATABASE_URL` a ella. Lo escribo porque complica regularmente a equipos nuevos. Docker es el camino recomendado para consistencia.
+El proyecto está diseñado para **dos ambientes**:
+- **Local**: PostgreSQL via Docker Compose (recomendado para desarrollo)
+- **Remoto**: PostgreSQL 16 en Proxmox (staging/producción), acceso via SSH tunnel o VPN
+
+Ambos usan la misma cadena de migraciones Alembic. Cambiar de entorno es solo cuestión de actualizar `DATABASE_URL` en `.env` (y tener conectividad al remoto). Docker local es el camino recomendado para desarrollo por consistencia.
 
 ## Licencia
 

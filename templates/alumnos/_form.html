@@ -1,0 +1,95 @@
+<div class="modal-overlay" x-data="{ open: true }" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.outside="open = false; setTimeout(() => $el.remove(), 150)">
+    <div class="modal" @click.inside>
+        <div class="modal-header">
+            <h2>{% if alumno %}Editar Alumno{% else %}Nuevo Alumno{% endif %}</h2>
+            <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
+        </div>
+        <form hx-post="{% if alumno %}/api/v1/alumnos/{{ alumno.id }}{% else %}/api/v1/alumnos{% endif %}" 
+              hx-target="#modal-container" hx-swap="outerHTML" 
+              hx-on::after-request="if (event.detail.successful) { Alpine.store('auth').$el.querySelector('#alumnos-table-body')?.dispatchEvent(new Event('load')); }"
+              class="form">
+            <input type="hidden" name="_method" value="{% if alumno %}PATCH{% else %}POST{% endif %}">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dni">DNI *</label>
+                    <input type="text" id="dni" name="dni" required pattern="^\d{7,8}[A-Z]?$" 
+                           value="{{ alumno.dni if alumno else '' }}" {% if alumno %}readonly{% endif %}>
+                    <small class="form-help">7-8 dígitos, letra opcional al final</small>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required 
+                           value="{{ alumno.email if alumno else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required maxlength="100" 
+                           value="{{ alumno.nombre if alumno else '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="apellido">Apellido *</label>
+                    <input type="text" id="apellido" name="apellido" required maxlength="100" 
+                           value="{{ alumno.apellido if alumno else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" name="telefono" maxlength="30" 
+                           value="{{ alumno.telefono if alumno else '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="fecha_nacimiento">Fecha de nacimiento</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" 
+                           value="{{ alumno.fecha_nacimiento.strftime('%Y-%m-%d') if alumno and alumno.fecha_nacimiento else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="usuario_github">GitHub</label>
+                    <input type="text" id="usuario_github" name="usuario_github" maxlength="100" 
+                           value="{{ alumno.usuario_github if alumno else '' }}" placeholder="usuario">
+                </div>
+                <div class="form-group">
+                    <label for="usuario_gitlab">GitLab</label>
+                    <input type="text" id="usuario_gitlab" name="usuario_gitlab" maxlength="100" 
+                           value="{{ alumno.usuario_gitlab if alumno else '' }}" placeholder="usuario">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="perfil_linkedin">LinkedIn</label>
+                <input type="url" id="perfil_linkedin" name="perfil_linkedin" maxlength="255" 
+                       value="{{ alumno.perfil_linkedin if alumno else '' }}" placeholder="https://linkedin.com/in/usuario">
+            </div>
+            
+            {% if alumno %}
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="activo" {% if alumno.activo %}checked{% endif %}>
+                    <span>Activo</span>
+                </label>
+            </div>
+            {% endif %}
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @click="open = false; setTimeout(() => $el.remove(), 150)">Cancelar</button>
+                <button type="submit" class="btn btn-primary">{% if alumno %}Guardar cambios{% else %}Crear alumno{% endif %}</button>
+            </div>
+        </form    </div>
+</div>
+
+<script>
+    document.addEventListener('htmx:afterRequest', (evt) => {
+        if (evt.detail.successful && evt.detail.target.id === 'modal-container') {
+            document.getElementById('alumnos-table-body')?.dispatchEvent(new Event('load'));
+            showFlash('{% if alumno %}Alumno actualizado correctamente{% else %}Alumno creado correctamente{% endif %}', 'success');
+        }
+    });
+</script>

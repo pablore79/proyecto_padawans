@@ -1,0 +1,33 @@
+<div class="modal-overlay" x-data="{ open: true }" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.outside="open = false; setTimeout(() => $el.remove(), 150)">
+    <div class="modal" @click.inside>
+        <div class="modal-header">
+            <h2>Inscribir Alumno en {{ curso_nombre }}</h2>
+            <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
+        </div>
+        <form hx-post="/api/v1/cursos/{{ curso_id }}/inscripciones" 
+              hx-target="#modal-container" hx-swap="outerHTML"
+              class="form">
+            <div class="form-group">
+                <label for="alumno_id">Alumno *</label>
+                <select id="alumno_id" name="alumno_id" required hx-get="/alumnos/options" hx-trigger="load">
+                    <option value="">Seleccionar alumno...</option>
+                </select>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @click="open = false; setTimeout(() => $el.remove(), 150)">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Inscribir</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('htmx:afterRequest', (evt) => {
+        if (evt.detail.successful && evt.detail.target.id === 'modal-container') {
+            document.getElementById('inscripciones-table-body')?.dispatchEvent(new Event('load'));
+            document.getElementById('cursos-table-body')?.dispatchEvent(new Event('load'));
+            showFlash('Alumno inscrito correctamente', 'success');
+        }
+    });
+</script>

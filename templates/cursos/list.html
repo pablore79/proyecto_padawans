@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Cursos - Bunker4 Alumnos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Cursos</h1>
+        <button class="btn btn-primary" hx-get="/cursos/nuevo" hx-target="#modal-container" hx-swap="innerHTML">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Nuevo Curso
+        </button>
+    </div>
+    <div class="search-bar">
+        <input type="search" id="search-input" placeholder="Buscar por nombre o descripción..." 
+               hx-get="/cursos/list" hx-trigger="keyup changed delay:300ms, search" 
+               hx-target="#cursos-table-body" hx-include="#activo-filter" hx-indicator="#search-spinner">
+        <span class="htmx-indicator" id="search-spinner">⏳</span>
+        <select id="activo-filter" hx-get="/cursos/list" hx-trigger="change" hx-target="#cursos-table-body" hx-include="#search-input">
+            <option value="">Todos</option>
+            <option value="true">Activos</option>
+            <option value="false">Inactivos</option>
+        </select>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Cupos</th>
+                <th>Inscriptos</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="cursos-table-body" hx-get="/cursos/list" hx-trigger="load">
+            <tr><td colspan="6" class="text-center">Cargando...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="modal-container"></div>
+{% endblock %}

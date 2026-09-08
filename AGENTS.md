@@ -183,13 +183,19 @@ alembic history
 - Revisar SQL generado antes de `upgrade`
 - `downgrade()` debe ser funcional (no `pass`)
 
-### Docker Postgres
+### Docker Postgres (Local)
 ```bash
 docker compose up -d          # levanta
 docker compose down           # baja (mantiene volúmenes)
 docker compose down -v        # baja Y borra datos (reset completo)
 docker compose logs -f postgres
 ```
+
+### PostgreSQL Remoto (Proxmox)
+- Servidor PostgreSQL 16 en Proxmox (producción/staging)
+- Conexión via SSH tunnel o VPN
+- `DATABASE_URL` configurada en `.env` del entorno correspondiente
+- Migraciones (`alembic upgrade head`) se ejecutan en ambos ambientes
 
 ---
 

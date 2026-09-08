@@ -1,0 +1,46 @@
+<tr hx-get="/cursos/{{ curso.id }}/detalle" hx-target="#modal-container" hx-swap="innerHTML">
+    <td>{{ curso.nombre }}</td>
+    <td>{{ curso.descripcion or '-' }}</td>
+    <td>{{ curso.cupos }}</td>
+    <td>
+        <span class="cupos-badge {% if curso.inscriptos_count >= curso.cupos %}cupos-full{% elif curso.inscriptos_count >= curso.cupos * 0.8 %}cupos-warning{% endif %}">
+            {{ curso.inscriptos_count }} / {{ curso.cupos }}
+        </span>
+    </td>
+    <td>
+        <span class="badge {% if curso.activo %}badge-success{% else %}badge-danger{% endif %}">
+            {% if curso.activo %}Activo{% else %}Inactivo{% endif %}
+        </span>
+    </td>
+    <td>
+        <div class="actions">
+            <a href="/cursos/{{ curso.id }}/editar" class="btn btn-ghost btn-sm" hx-get="/cursos/{{ curso.id }}/editar" hx-target="#modal-container" hx-swap="innerHTML">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </a>
+            {% if curso.activo %}
+            <button class="btn btn-ghost btn-sm btn-danger" 
+                    hx-delete="/api/v1/cursos/{{ curso.id }}" 
+                    hx-target="closest tr" hx-swap="outerHTML"
+                    hx-confirm="¿Dar de baja a este curso? Se desactivarán sus inscripciones y se desasignarán los docentes.">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+            {% else %}
+            <button class="btn btn-ghost btn-sm btn-success" 
+                    hx-post="/api/v1/cursos/{{ curso.id }}/reactivar" 
+                    hx-target="closest tr" hx-swap="outerHTML"
+                    hx-confirm="¿Reactivar este curso?">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </button>
+            {% endif %}
+        </div>
+    </td>
+</tr>

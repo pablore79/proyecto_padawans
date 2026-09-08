@@ -1,0 +1,42 @@
+<tr>
+    <td>{{ alumno.dni }}</td>
+    <td>{{ alumno.apellido }}, {{ alumno.nombre }}</td>
+    <td>{{ alumno.email }}</td>
+    <td>{{ alumno.telefono or '-' }}</td>
+    <td>
+        <span class="badge {% if alumno.activo %}badge-success{% else %}badge-danger{% endif %}">
+            {% if alumno.activo %}Activo{% else %}Inactivo{% endif %}
+        </span>
+    </td>
+    <td>
+        <div class="actions">
+            <a href="/alumnos/{{ alumno.id }}/editar" class="btn btn-ghost btn-sm" hx-get="/alumnos/{{ alumno.id }}/editar" hx-target="#modal-container" hx-swap="innerHTML">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </a>
+            {% if alumno.activo %}
+            <button class="btn btn-ghost btn-sm btn-danger" data-delete-alumno 
+                    hx-delete="/api/v1/alumnos/{{ alumno.id }}" 
+                    hx-target="closest tr" hx-swap="outerHTML"
+                    hx-confirm="¿Dar de baja a este alumno? Se desactivarán sus inscripciones.">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+            {% else %}
+            <button class="btn btn-ghost btn-sm btn-success" 
+                    hx-post="/api/v1/alumnos/{{ alumno.id }}/reactivar" 
+                    hx-target="closest tr" hx-swap="outerHTML"
+                    hx-confirm="¿Reactivar a este alumno?">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </button>
+            {% endif %}
+        </div>
+    </td>
+</tr>

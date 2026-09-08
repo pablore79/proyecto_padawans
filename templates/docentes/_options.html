@@ -1,0 +1,3 @@
+{% for docente in docentes %}
+<option value="{{ docente.id }}">{{ docente.username }} ({{ docente.email }})</option>
+{% endfor %}
