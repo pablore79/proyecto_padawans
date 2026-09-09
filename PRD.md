@@ -1,5 +1,3 @@
-# PRD - Sistema de Administración de Alumnos
-
 **Proyecto:** proyecto_padawans
 **Cliente interno:** Bunker4 (jornada formativa)
 **Versión:** 0.1.0 (inicial)
@@ -19,10 +17,13 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 - Reportes inconsistentes.
 - Sin control de acceso: cualquiera con la planilla edita.
 - Dificultad para seguir cuántos alumnos hay por curso.
+- Dificultad para saber que alumno se encuentra interesado en que tema
 
 ## 3. Objetivos
 
 - Centralizar la administración de alumnos y cursos en un único servicio.
+- Puesto que cad alumno llega con conocimientos distintos al taller, hace falta que tengan una lista de temas en los cuales estén interesados en aprender, y que puedan anotarse a las clases en las cuales se trabajaran esos mismos temas.
+- El entregable debe incluir agrupaciones de clases en los cuales se pueda avisar a un determinado grupo de alumnos interesados, que se trabajara ese día en uno de los temas en los que se han inscripto
 - Garantizar que cada operación quede registrada con quién y cuándo.
 - Permitir que tres roles distintos (admin, docente, alumno) accedan a funciones acotadas a su rol.
 - Asegurar que la base no quede inconsistente (inscripciones inválidas, cursos huérfanos).
@@ -38,11 +39,11 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 
 ## 5. Personas y roles
 
-| Rol | Descripción | Acciones permitidas |
-|-----|-------------|---------------------|
-| **admin** | Coordinador de Bunker4. | CRUD alumnos, CRUD cursos/materias, CRUD docentes, asignar docentes a cursos, inscribir alumnos en cursos. |
-| **docente** | Responsable de uno o varios cursos. | Ver listado de alumnos de sus cursos, ver su propio perfil. NO puede crear alumnos ni cursos. |
-| **alumno** | persona cursando. | Ver su propio perfil, ver los cursos en los que está inscripto. No puede editar nada. |
+| Rol         | Descripción                         | Acciones permitidas                                                                                        |
+| ----------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **admin**   | Coordinador de Bunker4.             | CRUD alumnos, CRUD cursos/materias, CRUD docentes, asignar docentes a cursos, inscribir alumnos en cursos. |
+| **docente** | Responsable de uno o varios cursos. | Ver listado de alumnos de sus cursos, ver su propio perfil. NO puede crear alumnos ni cursos.              |
+| **alumno**  | persona cursando.                   | Ver su propio perfil, ver los cursos en los que está inscripto. No puede editar nada.                      |
 
 ## 6. Entidades
 
@@ -170,6 +171,7 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 
 **Actor:** admin
 **Flujo:**
+
 1. Admin hace POST `/auth/login` con credenciales admin.
 2. Admin hace POST `/alumnos` con datos del alumno.
 3. Sistema valida dni y email únicos.
@@ -182,6 +184,7 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 
 **Actor:** admin
 **Flujo:**
+
 1. Admin hace POST `/cursos/{curso_id}/inscripciones`.
 2. Sistema verifica que la cantidad de inscripciones `activa` < `cupos`.
 3. Si alcanza el cupo, devuelve 409 con mensaje `cupos_completos`.
@@ -193,6 +196,7 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 
 **Actor:** docente
 **Flujo:**
+
 1. Docente hace POST `/auth/login`.
 2. Docente hace GET `/docente/me/cursos`.
 3. Sistema filtra cursos donde `asignacion_docente.usuario_id` = su id.
@@ -202,6 +206,7 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 
 **Actor:** alumno
 **Flujo:**
+
 1. Alumno hace POST `/auth/login`.
 2. Alumno hace GET `/alumno/me/cursos`.
 3. Sistema filtra por su `alumno_id` y `estado=activa`.
@@ -227,12 +232,12 @@ Bunker4 actualmente administra su lista de alumnos, los cursos en los que están
 
 ## 12. Riesgos
 
-| Riesgo | Mitigación |
-|--------|-----------|
-| Conflicto de versiones entre SQLAlchemy 2.0 y snippets viejos de tutorial | Empezar con SQLAlchemy 2.0 sync style然后再 migrar a async; no copiar tutoriales de 1.4. |
-| `asyncpg` vs `psycopg` para async DB | Decisión final en PLAN.md; se elige `psycopg[binary]` con soporte async nativo en Python 3.12. |
-| Postgres local vs Docker | Se recomienda Docker; se documenta alternativa en README. |
-| Hard delete accidental | Regla de negocio 8: soft delete únicamente. |
+| Riesgo                                                                    | Mitigación                                                                                     |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Conflicto de versiones entre SQLAlchemy 2.0 y snippets viejos de tutorial | Empezar con SQLAlchemy 2.0 sync style然后再 migrar a async; no copiar tutoriales de 1.4.       |
+| `asyncpg` vs `psycopg` para async DB                                      | Decisión final en PLAN.md; se elige `psycopg[binary]` con soporte async nativo en Python 3.12. |
+| Postgres local vs Docker                                                  | Se recomienda Docker; se documenta alternativa en README.                                      |
+| Hard delete accidental                                                    | Regla de negocio 8: soft delete únicamente.                                                    |
 
 ## 13. Criterios de aceptación (primer slice)
 
