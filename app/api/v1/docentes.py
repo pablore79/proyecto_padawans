@@ -16,7 +16,7 @@ async def asignar_docente(
     usuario_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, int]:
     service = InscripcionService(db)
     return await service.asignar_docente(curso_id, usuario_id)
 
@@ -27,7 +27,7 @@ async def desasignar_docente(
     usuario_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> MessageResponse:
     service = InscripcionService(db)
     await service.desasignar_docente(curso_id, usuario_id)
     return MessageResponse(message="Docente desasignado correctamente", code="docente_desasignado")

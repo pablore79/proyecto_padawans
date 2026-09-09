@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     return await auth_service.get_current_user(token)
 
 
-def require_role(*allowed_roles: str) -> Callable:
+def require_role(*allowed_roles: str) -> Callable[[], Awaitable[Usuario]]:
     async def role_checker(current_user: Usuario = Depends(get_current_user)) -> Usuario:
         if current_user.rol.value not in allowed_roles:
             raise ForbiddenError("No tiene permisos para realizar esta acción", "sin_permisos")

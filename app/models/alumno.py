@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Date, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import AuditMixin, Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.inscripcion import Inscripcion
+    from app.models.usuario import Usuario
 
 
 class Alumno(Base, TimestampMixin, AuditMixin):
@@ -27,7 +31,7 @@ class Alumno(Base, TimestampMixin, AuditMixin):
     inscripciones: Mapped[list["Inscripcion"]] = relationship(
         "Inscripcion", back_populates="alumno", lazy="selectin"
     )
-    usuario: Mapped[Optional["Usuario"]] = relationship(
+    usuario: Mapped["Usuario | None"] = relationship(
         "Usuario", back_populates="alumno", lazy="selectin", uselist=False
     )
 
@@ -37,4 +41,7 @@ class Alumno(Base, TimestampMixin, AuditMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<Alumno(id={self.id}, dni='{self.dni}', nombre='{self.nombre}', apellido='{self.apellido}')>"
+        return (
+            f"<Alumno(id={self.id}, dni='{self.dni}', nombre='{self.nombre}', "
+            f"apellido='{self.apellido}')>"
+        )

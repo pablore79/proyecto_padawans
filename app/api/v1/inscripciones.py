@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_admin
 from app.core.database import get_db
+from app.core.exceptions import AppException
 from app.models.usuario import Usuario
 from app.schemas.common import PaginatedResponse
 from app.schemas.inscripcion import (
@@ -21,12 +22,10 @@ async def create_inscripcion(
     inscripcion_data: InscripcionCreate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> InscripcionRead:
     service = InscripcionService(db)
     if inscripcion_data.curso_id != curso_id:
-        from app.core.exceptions import ValidationError
-
-        raise ValidationError(
+        raise AppException(
             "El curso_id del body debe coincidir con el de la URL", "validacion_error"
         )
     return await service.create(inscripcion_data)
@@ -40,7 +39,7 @@ async def list_inscripciones(
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> PaginatedResponse[InscripcionRead]:
     from app.models.inscripcion import EstadoInscripcion
 
     service = InscripcionService(db)
@@ -58,6 +57,6 @@ async def delete_inscripcion(
     alumno_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> InscripcionRead:
     service = InscripcionService(db)
     return await service.set_baja(curso_id, alumno_id)

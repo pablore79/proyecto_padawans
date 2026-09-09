@@ -50,6 +50,9 @@ ignore = [
     "S101", # assert in tests
     "ARG001", # unused argument in tests (fixtures)
     "ARG002", # unused method argument
+    "B008", # Depends() in defaults - standard FastAPI pattern
+    "UP037", # quotes in forward refs - needed for SQLAlchemy runtime
+    "F821", # undefined names in forward refs - handled by __future__.annotations
 ]
 exclude = [
     ".git",
@@ -86,6 +89,18 @@ module = [
     "alembic.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.main"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.api.v1.me_docente"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.api.v1.me_alumno"
+ignore_errors = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

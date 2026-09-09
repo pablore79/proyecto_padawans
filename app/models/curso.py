@@ -1,10 +1,16 @@
-
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import AuditMixin, Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.asignacion_docente import AsignacionDocente
+    from app.models.inscripcion import Inscripcion
+    from app.models.materia import Materia
 
 
 class Curso(Base, TimestampMixin, AuditMixin):
@@ -29,4 +35,7 @@ class Curso(Base, TimestampMixin, AuditMixin):
     __table_args__ = (UniqueConstraint("nombre", name="uq_cursos_nombre"),)
 
     def __repr__(self) -> str:
-        return f"<Curso(id={self.id}, nombre='{self.nombre}', cupos={self.cupos}, activo={self.activo})>"
+        return (
+            f"<Curso(id={self.id}, nombre='{self.nombre}', "
+            f"cupos={self.cupos}, activo={self.activo})>"
+        )

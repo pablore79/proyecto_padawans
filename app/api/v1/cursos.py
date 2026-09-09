@@ -20,7 +20,7 @@ async def list_cursos(
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> PaginatedResponse[CursoRead]:
     service = CursoService(db)
     return await service.list(activo=activo, search=search, limit=limit, offset=offset)
 
@@ -30,7 +30,7 @@ async def create_curso(
     curso_data: CursoCreate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> CursoRead:
     service = CursoService(db)
     return await service.create(curso_data, current_user.id)
 
@@ -40,7 +40,7 @@ async def get_curso(
     curso_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> CursoRead:
     service = CursoService(db)
     return await service.get(curso_id)
 
@@ -51,7 +51,7 @@ async def update_curso(
     curso_data: CursoUpdate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> CursoRead:
     service = CursoService(db)
     return await service.update(curso_id, curso_data, current_user.id)
 
@@ -61,7 +61,7 @@ async def delete_curso(
     curso_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> CursoRead:
     service = CursoService(db)
     return await service.soft_delete(curso_id, current_user.id)
 
@@ -71,7 +71,7 @@ async def reactivar_curso(
     curso_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> CursoRead:
     service = CursoService(db)
     curso = await service.curso_repo.get(curso_id)
     if not curso:
@@ -96,7 +96,7 @@ async def list_materias(
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> PaginatedResponse[MateriaRead]:
     service = CursoService(db)
     return await service.list_materias(curso_id, limit, offset)
 
@@ -107,7 +107,7 @@ async def create_materia(
     materia_data: MateriaCreate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> MateriaRead:
     service = CursoService(db)
     return await service.create_materia(curso_id, materia_data, current_user.id)
 
@@ -118,7 +118,7 @@ async def update_materia(
     materia_data: MateriaUpdate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> MateriaRead:
     service = CursoService(db)
     return await service.update_materia(materia_id, materia_data, current_user.id)
 
@@ -128,7 +128,7 @@ async def delete_materia(
     materia_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> None:
     service = CursoService(db)
     await service.delete_materia(materia_id)
     return None

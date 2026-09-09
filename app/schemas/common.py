@@ -20,7 +20,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 class ErrorResponse(BaseModel):
     detail: str
     code: str
-    extra: dict | None = None
+    extra: dict[str, str] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

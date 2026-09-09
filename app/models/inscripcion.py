@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from enum import Enum as PyEnum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.alumno import Alumno
+    from app.models.curso import Curso
 
 
 class EstadoInscripcion(str, PyEnum):
@@ -44,11 +51,12 @@ class Inscripcion(Base, TimestampMixin):
             "alumno_id",
             "curso_id",
             unique=True,
-            postgresql_where=__table_args__[0].expression
-            if hasattr(__table_args__[0], "expression")
-            else None,
+            postgresql_where=text("estado = 'activa'"),
         ),
     )
 
     def __repr__(self) -> str:
-        return f"<Inscripcion(id={self.id}, alumno_id={self.alumno_id}, curso_id={self.curso_id}, estado='{self.estado}')>"
+        return (
+            f"<Inscripcion(id={self.id}, alumno_id={self.alumno_id}, "
+            f"curso_id={self.curso_id}, estado='{self.estado}')>"
+        )

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from enum import Enum as PyEnum
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import AuditMixin, Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.alumno import Alumno
+    from app.models.asignacion_docente import AsignacionDocente
 
 
 class RolUsuario(str, PyEnum):
@@ -30,7 +34,7 @@ class Usuario(Base, TimestampMixin, AuditMixin):
     )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    alumno: Mapped[Optional["Alumno"]] = relationship(
+    alumno: Mapped["Alumno | None"] = relationship(
         "Alumno", back_populates="usuario", lazy="selectin"
     )
     asignaciones_docente: Mapped[list["AsignacionDocente"]] = relationship(

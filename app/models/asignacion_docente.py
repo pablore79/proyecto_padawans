@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.curso import Curso
+    from app.models.usuario import Usuario
 
 
 class AsignacionDocente(Base, TimestampMixin):
@@ -28,4 +35,7 @@ class AsignacionDocente(Base, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<AsignacionDocente(id={self.id}, usuario_id={self.usuario_id}, curso_id={self.curso_id})>"
+        return (
+            f"<AsignacionDocente(id={self.id}, usuario_id={self.usuario_id}, "
+            f"curso_id={self.curso_id})>"
+        )

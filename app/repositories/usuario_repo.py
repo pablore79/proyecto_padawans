@@ -1,4 +1,3 @@
-
 import builtins
 
 from sqlalchemy import select
@@ -44,9 +43,7 @@ class UsuarioRepository:
         return list(result.scalars().all())
 
     async def list_docentes(self, limit: int = 20, offset: int = 0) -> builtins.list[Usuario]:
-        query = select(Usuario).where(
-            Usuario.rol == RolUsuario.DOCENTE, Usuario.activo
-        )
+        query = select(Usuario).where(Usuario.rol == RolUsuario.DOCENTE, Usuario.activo)
         query = query.order_by(Usuario.username).limit(limit).offset(offset)
         result = await self.db.execute(query)
         return list(result.scalars().all())

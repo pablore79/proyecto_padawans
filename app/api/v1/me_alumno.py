@@ -13,7 +13,7 @@ router = APIRouter(prefix="/alumno/me", tags=["Alumno - Mis Cursos"])
 async def mis_cursos(
     current_user: Usuario = Depends(require_alumno),
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, object]:
     if not current_user.alumno_id:
         from app.core.exceptions import UnauthorizedError
 

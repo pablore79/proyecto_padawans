@@ -1,13 +1,17 @@
-
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin
+from app.models.base import AuditMixin, Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.curso import Curso
 
 
-class Materia(Base, TimestampMixin):
+class Materia(Base, TimestampMixin, AuditMixin):
     __tablename__ = "materias"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

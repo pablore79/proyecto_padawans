@@ -13,7 +13,7 @@ router = APIRouter(prefix="/docente/me", tags=["Docente - Mis Cursos"])
 async def mis_cursos(
     current_user: Usuario = Depends(require_docente),
     db: AsyncSession = Depends(get_db),
-):
+) -> dict[str, object]:
     service = InscripcionService(db)
     cursos = await service.get_cursos_docente(current_user.id)
     return {

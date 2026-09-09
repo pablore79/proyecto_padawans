@@ -27,5 +27,6 @@ class CursoRead(CursoBase):
     updated_at: datetime
     created_by: int | None = None
     updated_by: int | None = None
+    inscriptos_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)

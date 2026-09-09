@@ -1,22 +1,29 @@
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import require_admin
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
-from app.core.database import close_db, init_db
+from app.core.database import close_db, get_db, init_db
 from app.core.exceptions import register_exception_handlers
+from app.repositories.alumno_repo import AlumnoRepository
+from app.repositories.usuario_repo import UsuarioRepository
+from app.services.alumno_service import AlumnoService
+from app.services.curso_service import CursoService
+from app.services.inscripcion_service import InscripcionService
 
 templates = Jinja2Templates(directory="templates")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> None:
     await init_db()
     yield
     await close_db()
@@ -46,7 +53,7 @@ app.include_router(api_v1_router)
 
 
 @app.middleware("http")
-async def add_request_id(request: Request, call_next):
+async def add_request_id(request: Request, call_next) -> Response:
     request_id = request.headers.get("X-Request-ID", str(uuid4()))
     request.state.request_id = request_id
     response = await call_next(request)
@@ -55,52 +62,39 @@ async def add_request_id(request: Request, call_next):
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def root(request: Request):
+async def root(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
-async def login_page(request: Request):
+async def login_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
-async def dashboard(request: Request):
+async def dashboard(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.get("/alumnos", response_class=HTMLResponse, include_in_schema=False)
-async def alumnos_page(request: Request):
+async def alumnos_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("alumnos/list.html", {"request": request})
 
 
 @app.get("/cursos", response_class=HTMLResponse, include_in_schema=False)
-async def cursos_page(request: Request):
+async def cursos_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("cursos/list.html", {"request": request})
 
 
 @app.get("/cursos/{curso_id}", response_class=HTMLResponse, include_in_schema=False)
-async def curso_detail(request: Request, curso_id: int):
+async def curso_detail(request: Request, curso_id: int) -> HTMLResponse:
     return templates.TemplateResponse(
         "cursos/detail.html", {"request": request, "curso_id": curso_id}
     )
 
 
-# HTMX Partial Endpoints
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.api.deps import require_admin
-from app.core.database import get_db
-from app.repositories.alumno_repo import AlumnoRepository
-from app.repositories.usuario_repo import UsuarioRepository
-from app.services.alumno_service import AlumnoService
-from app.services.curso_service import CursoService
-from app.services.inscripcion_service import InscripcionService
-
-
 @app.get("/alumnos/nuevo", response_class=HTMLResponse, include_in_schema=False)
-async def alumno_nuevo(request: Request):
+async def alumno_nuevo(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("alumnos/_form.html", {"request": request, "alumno": None})
 
 
@@ -297,7 +291,6 @@ async def docentes_list_partial(
     current_user=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    service = InscripcionService(db)
     from sqlalchemy import select
 
     from app.models.asignacion_docente import AsignacionDocente
@@ -311,7 +304,7 @@ async def docentes_list_partial(
     result = await db.execute(query)
     rows = result.all()
     docentes = []
-    for ad, usuario in rows:
+    for _ad, usuario in rows:
         docentes.append({"id": usuario.id, "username": usuario.username, "email": usuario.email})
     return templates.TemplateResponse(
         "cursos/_docente_row.html", {"request": request, "docentes": docentes, "curso_id": curso_id}

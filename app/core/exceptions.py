@@ -25,9 +25,7 @@ class AppException(Exception):
 
 
 class NotFoundError(AppException):
-    def __init__(
-        self, detail: str, code: str = "not_found", extra: dict[str, Any] | None = None
-    ):
+    def __init__(self, detail: str, code: str = "not_found", extra: dict[str, Any] | None = None):
         super().__init__(detail, code, status.HTTP_404_NOT_FOUND, extra)
 
 
@@ -44,17 +42,8 @@ class UnauthorizedError(AppException):
 
 
 class ForbiddenError(AppException):
-    def __init__(
-        self, detail: str, code: str = "forbidden", extra: dict[str, Any] | None = None
-    ):
+    def __init__(self, detail: str, code: str = "forbidden", extra: dict[str, Any] | None = None):
         super().__init__(detail, code, status.HTTP_403_FORBIDDEN, extra)
-
-
-class ValidationError(AppException):
-    def __init__(
-        self, detail: str, code: str = "validation_error", extra: dict[str, Any] | None = None
-    ):
-        super().__init__(detail, code, status.HTTP_422_UNPROCESSABLE_ENTITY, extra)
 
 
 ERROR_CODES = {
@@ -89,7 +78,7 @@ def create_error_response(
     status_code: int = status.HTTP_400_BAD_REQUEST,
     extra: dict[str, Any] | None = None,
 ) -> JSONResponse:
-    content = {"detail": detail, "code": code}
+    content: dict[str, str | dict[str, Any]] = {"detail": detail, "code": code}
     if extra:
         content["extra"] = extra
     return JSONResponse(status_code=status_code, content=content)

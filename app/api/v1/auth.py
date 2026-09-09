@@ -11,13 +11,13 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 
 @router.post("/login", response_model=Token)
-async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(credentials: LoginRequest, db: AsyncSession = Depends(get_db)) -> Token:
     auth_service = AuthService(db)
     return await auth_service.login(credentials.username, credentials.password)
 
 
 @router.get("/me", response_model=UserRead)
-async def me(current_user: Usuario = Depends(get_current_user)):
+async def me(current_user: Usuario = Depends(get_current_user)) -> UserRead:
     return UserRead.model_validate(current_user)
 
 
@@ -26,6 +26,6 @@ async def create_user(
     user_data: UserCreate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> UserRead:
     auth_service = AuthService(db)
     return await auth_service.register(user_data, current_user.id)

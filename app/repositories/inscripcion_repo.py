@@ -1,3 +1,4 @@
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,9 +23,7 @@ class InscripcionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_active_by_alumno_curso(
-        self, alumno_id: int, curso_id: int
-    ) -> Inscripcion | None:
+    async def get_active_by_alumno_curso(self, alumno_id: int, curso_id: int) -> Inscripcion | None:
         result = await self.db.execute(
             select(Inscripcion).where(
                 Inscripcion.alumno_id == alumno_id,
@@ -122,7 +121,9 @@ class InscripcionRepository:
         await self.db.flush()
         return count
 
-    async def get_with_details(self, inscripcion_id: int) -> dict | None:
+    async def get_with_details(
+        self, inscripcion_id: int
+    ) -> dict[str, str | int | datetime | EstadoInscripcion | None] | None:
         from sqlalchemy.orm import joinedload
 
         query = (
@@ -152,7 +153,7 @@ class InscripcionRepository:
         estado: EstadoInscripcion | None = None,
         limit: int = 20,
         offset: int = 0,
-    ) -> list[dict]:
+    ) -> list[dict[str, str | int | datetime | EstadoInscripcion | None]]:
         from sqlalchemy.orm import joinedload
 
         query = (

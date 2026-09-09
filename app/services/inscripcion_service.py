@@ -1,3 +1,4 @@
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,15 +58,16 @@ class InscripcionService:
             estado=EstadoInscripcion.ACTIVA,
         )
         created_inscripcion = await self.inscripcion_repo.create(inscripcion)
-        return InscripcionRead.model_validate(
-            await self.inscripcion_repo.get_with_details(created_inscripcion.id)
-        )
+        details = await self.inscripcion_repo.get_with_details(created_inscripcion.id)
+        if not details:
+            raise NotFoundError("Inscripción no encontrada", "inscripcion_no_encontrada")
+        return InscripcionRead.model_validate(details)
 
     async def get(self, inscripcion_id: int) -> InscripcionRead:
         result = await self.inscripcion_repo.get_with_details(inscripcion_id)
         if not result:
             raise NotFoundError("Inscripción no encontrada", "inscripcion_no_encontrada")
-        return InscripcionRead(**result)
+        return InscripcionRead.model_validate(result)
 
     async def list_by_curso(
         self, curso_id: int, params: InscripcionListParams
@@ -81,7 +83,7 @@ class InscripcionService:
             offset=params.offset,
         )
         total = await self.inscripcion_repo.count_by_curso(curso_id, estado=params.estado)
-        items = [InscripcionRead(**i) for i in inscripciones]
+        items = [InscripcionRead.model_validate(i) for i in inscripciones]
         return PaginatedResponse(items=items, total=total, limit=params.limit, offset=params.offset)
 
     async def list_by_alumno(
@@ -112,7 +114,7 @@ class InscripcionService:
             await self.inscripcion_repo.get_with_details(updated.id)
         )
 
-    async def get_cursos_docente(self, usuario_id: int) -> list[dict]:
+    async def get_cursos_docente(self, usuario_id: int) -> list[dict[str, Any]]:
         query = select(AsignacionDocente).where(AsignacionDocente.usuario_id == usuario_id)
         result = await self.db.execute(query)
         asignaciones = result.scalars().all()
@@ -131,7 +133,7 @@ class InscripcionService:
                 )
         return cursos
 
-    async def get_cursos_alumno(self, alumno_id: int) -> list[dict]:
+    async def get_cursos_alumno(self, alumno_id: int) -> list[dict[str, Any]]:
         inscripciones = await self.inscripcion_repo.list_by_alumno(
             alumno_id=alumno_id, estado=EstadoInscripcion.ACTIVA
         )
@@ -147,7 +149,7 @@ class InscripcionService:
                 )
         return cursos
 
-    async def asignar_docente(self, curso_id: int, usuario_id: int) -> dict:
+    async def asignar_docente(self, curso_id: int, usuario_id: int) -> dict[str, int]:
         curso = await self.curso_repo.get(curso_id)
         if not curso:
             raise NotFoundError("Curso no encontrado", "curso_no_encontrado")

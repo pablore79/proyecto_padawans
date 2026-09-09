@@ -19,7 +19,7 @@ async def list_alumnos(
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> PaginatedResponse[AlumnoRead]:
     service = AlumnoService(db)
     params = AlumnoListParams(activo=activo, search=search, limit=limit, offset=offset)
     return await service.list(params)
@@ -30,7 +30,7 @@ async def create_alumno(
     alumno_data: AlumnoCreate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AlumnoRead:
     service = AlumnoService(db)
     return await service.create(alumno_data, current_user.id)
 
@@ -40,7 +40,7 @@ async def get_alumno(
     alumno_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AlumnoRead:
     service = AlumnoService(db)
     return await service.get(alumno_id)
 
@@ -51,7 +51,7 @@ async def update_alumno(
     alumno_data: AlumnoUpdate,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AlumnoRead:
     service = AlumnoService(db)
     return await service.update(alumno_id, alumno_data, current_user.id)
 
@@ -61,7 +61,7 @@ async def delete_alumno(
     alumno_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AlumnoRead:
     service = AlumnoService(db)
     return await service.soft_delete(alumno_id, current_user.id)
 
@@ -71,7 +71,7 @@ async def reactivar_alumno(
     alumno_id: int,
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
-):
+) -> AlumnoRead:
     service = AlumnoService(db)
     alumno = await service.alumno_repo.get(alumno_id)
     if not alumno:
