@@ -85,6 +85,7 @@ class CursoService:
             raise ConflictError("El curso ya está dado de baja", "curso_ya_inactivo")
 
         await self.inscripcion_repo.set_baja_by_curso(curso_id)
+        await self.inscripcion_repo.desasignar_docentes_by_curso(curso_id)
         deleted_curso = await self.curso_repo.soft_delete(curso, current_user_id)
         return CursoRead.model_validate(deleted_curso)
 

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from time import perf_counter
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Request, Response
@@ -13,6 +14,7 @@ from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
 from app.core.database import close_db, get_db, init_db
 from app.core.exceptions import register_exception_handlers
+from app.core.logging import RequestLogger, configure_logging, get_logger
 from app.repositories.alumno_repo import AlumnoRepository
 from app.repositories.usuario_repo import UsuarioRepository
 from app.services.alumno_service import AlumnoService
@@ -24,6 +26,7 @@ templates = Jinja2Templates(directory="templates")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> None:
+    configure_logging(settings.LOG_LEVEL)
     await init_db()
     yield
     await close_db()
@@ -59,6 +62,33 @@ async def add_request_id(request: Request, call_next) -> Response:
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     return response
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next) -> Response:
+    logger = RequestLogger(get_logger("http"))
+    request_id = getattr(request.state, "request_id", str(uuid4()))
+    start = perf_counter()
+    try:
+        response = await call_next(request)
+        duration_ms = (perf_counter() - start) * 1000
+        logger.log_request(
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=duration_ms,
+            request_id=request_id,
+        )
+        return response
+    except Exception as e:
+        duration_ms = (perf_counter() - start) * 1000
+        logger.log_error(
+            method=request.method,
+            path=request.url.path,
+            error=str(e),
+            request_id=request_id,
+        )
+        raise
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

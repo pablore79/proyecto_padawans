@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.asignacion_docente import AsignacionDocente
 from app.models.inscripcion import EstadoInscripcion, Inscripcion
 
 
@@ -180,3 +181,10 @@ class InscripcionRepository:
             }
             for i in inscripciones
         ]
+
+    async def desasignar_docentes_by_curso(self, curso_id: int) -> int:
+        """Delete all docente assignments for a curso. Returns count of deleted assignments."""
+        result = await self.db.execute(
+            delete(AsignacionDocente).where(AsignacionDocente.curso_id == curso_id)
+        )
+        return result.rowcount

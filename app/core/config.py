@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/bunker4_alumnos"
+        default="postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos"
     )
 
     SECRET_KEY: str = Field(default="cambiar_por_clave_secreta_segura_32_bytes_minimo")

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint, text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -44,7 +44,6 @@ class Inscripcion(Base, TimestampMixin):
     curso: Mapped["Curso"] = relationship("Curso", back_populates="inscripciones", lazy="selectin")
 
     __table_args__ = (
-        UniqueConstraint("alumno_id", "curso_id", name="uq_inscripciones_alumno_curso"),
         # Partial unique index for active inscriptions only
         Index(
             "ix_inscripciones_alumno_curso_activa",

@@ -11,6 +11,9 @@ httpx==0.27.2
 ruff==0.6.9
 mypy==1.11.2
 
+# Coverage
+codecov==2.1.13
+
 # Debug/Dev
 ipython==8.26.0
 ipdb==0.13.13

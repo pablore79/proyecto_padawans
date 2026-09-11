@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_admin
+from app.api.deps import require_admin, require_admin_or_docente
 from app.core.database import get_db
 from app.core.exceptions import AppException
 from app.models.usuario import Usuario
@@ -37,12 +37,33 @@ async def list_inscripciones(
     estado: str | None = Query(None, description="Filtrar por estado (activa, baja)"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    current_user: Usuario = Depends(require_admin),
+    current_user: Usuario = Depends(require_admin_or_docente),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[InscripcionRead]:
     from app.models.inscripcion import EstadoInscripcion
+    from app.services.inscripcion_service import InscripcionService
 
     service = InscripcionService(db)
+
+    # If docente, verify they're assigned to this curso
+    if current_user.rol.value == "docente":
+        from sqlalchemy import select
+
+        from app.models.asignacion_docente import AsignacionDocente
+
+        result = await db.execute(
+            select(AsignacionDocente).where(
+                AsignacionDocente.usuario_id == current_user.id,
+                AsignacionDocente.curso_id == curso_id,
+            )
+        )
+        if not result.scalar_one_or_none():
+            from app.core.exceptions import ForbiddenError
+
+            raise ForbiddenError(
+                "No tiene permisos para ver inscripciones de este curso", "sin_permisos"
+            )
+
     params = InscripcionListParams(
         estado=EstadoInscripcion(estado) if estado else None,
         limit=limit,
