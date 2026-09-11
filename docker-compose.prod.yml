@@ -18,7 +18,7 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - APP_NAME=${APP_NAME:-Bunker4 Alumnos}
       - APP_ENV=production
-      - DEBUG=false
+      - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DEFAULT_PAGE_SIZE=${DEFAULT_PAGE_SIZE:-20}
       - MAX_PAGE_SIZE=${MAX_PAGE_SIZE:-100}

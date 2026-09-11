@@ -27,7 +27,7 @@ def configure_logging(log_level: str = "INFO") -> None:
             getattr(logging, log_level.upper(), logging.INFO)
         ),
         context_class=dict,
-        logger_factory=structlog.BytesLoggerFactory(),
+        logger_factory=structlog.WriteLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
