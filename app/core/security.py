@@ -6,7 +6,13 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Usar pbkdf2_sha256 para evitar el bug de bcrypt en passlib (detect_wrap_bug)
+# y el límite de 72 bytes de bcrypt
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+    pbkdf2_sha256__default_rounds=29000,
+)
 
 
 class TokenData(BaseModel):
