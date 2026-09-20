@@ -6,6 +6,21 @@ from tests.conftest import TEST_PASSWORD
 class TestAuthAPI:
     """Integration tests for Auth endpoints."""
 
+    async def test_login_page_submits_json(self, client: AsyncClient):
+        """Test the web login preserves the API JSON contract."""
+        response = await client.get("/login")
+
+        assert response.status_code == 200
+        assert 'id="login-form"' in response.text
+        assert 'hx-post="/api/v1/auth/login"' not in response.text
+        assert "fetch('/api/v1/auth/login'" in response.text
+        assert "'Content-Type': 'application/json'" in response.text
+        assert "body: JSON.stringify({ username, password })" in response.text
+        assert "if (submitButton.disabled)" in response.text
+        assert "response.status === 401" in response.text
+        assert "No se pudo conectar con el servidor." in response.text
+        assert "submitButton.disabled = false" in response.text
+
     async def test_login_success(self, client: AsyncClient, admin_user):
         """Test successful login returns token."""
         response = await client.post(

@@ -120,6 +120,31 @@ uvicorn app.main:app --reload
 
 La API queda en `http://localhost:8000` y la documentación OpenAPI en `http://localhost:8000/docs`.
 
+### 8. Crear el administrador inicial
+
+Aplicá primero las migraciones y verificá que el environment `py3.12` esté activo. Luego ejecutá:
+
+```bash
+python -m scripts.create_admin
+```
+
+El comando solicita `Username`, `Email`, `Contraseña` y `Confirmar contraseña`. La contraseña se
+ingresa de forma oculta: no la pases como argumento, no la guardes en archivos y no la escribas en
+el historial de la shell. También podés proporcionar solamente los datos no sensibles como opciones:
+
+```bash
+python -m scripts.create_admin --username <username> --email <email>
+```
+
+El comando crea el primer usuario con rol `admin`, sin `alumno_id`, y registra su propio ID en
+`created_by` y `updated_by`. Si ese mismo administrador ya existe, termina sin duplicarlo ni cambiar
+su contraseña. Si existe otro administrador o hay una colisión de username/email, no modifica la
+base de datos y muestra un error.
+
+Este bootstrap es exclusivo para el primer administrador. El endpoint normal
+`POST /api/v1/auth/users` exige un administrador autenticado; después del bootstrap, usá ese endpoint
+para crear todos los administradores adicionales.
+
 ## Activación del environment en cada arranque (IMPORTANTE)
 
 Cada vez que abras una terminal nueva para trabajar en el proyecto:

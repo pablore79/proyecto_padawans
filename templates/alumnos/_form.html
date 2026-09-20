@@ -4,11 +4,7 @@
             <h2>{% if alumno %}Editar Alumno{% else %}Nuevo Alumno{% endif %}</h2>
             <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
         </div>
-        <form hx-post="{% if alumno %}/api/v1/alumnos/{{ alumno.id }}{% else %}/api/v1/alumnos{% endif %}" 
-              hx-target="#modal-container" hx-swap="outerHTML" 
-              hx-on::after-request="if (event.detail.successful) { Alpine.store('auth').$el.querySelector('#alumnos-table-body')?.dispatchEvent(new Event('load')); }"
-              class="form">
-            <input type="hidden" name="_method" value="{% if alumno %}PATCH{% else %}POST{% endif %}">
+        <form id="alumno-form" class="form">
             
             <div class="form-row">
                 <div class="form-group">
@@ -80,16 +76,98 @@
             
             <div class="form-actions">
                 <button type="button" class="btn btn-secondary" @click="open = false; setTimeout(() => $el.remove(), 150)">Cancelar</button>
-                <button type="submit" class="btn btn-primary">{% if alumno %}Guardar cambios{% else %}Crear alumno{% endif %}</button>
+                <button type="submit" class="btn btn-primary" id="alumno-submit">{% if alumno %}Guardar cambios{% else %}Crear alumno{% endif %}</button>
             </div>
-        </form    </div>
+        </form>
+    </div>
 </div>
 
 <script>
-    document.addEventListener('htmx:afterRequest', (evt) => {
-        if (evt.detail.successful && evt.detail.target.id === 'modal-container') {
-            document.getElementById('alumnos-table-body')?.dispatchEvent(new Event('load'));
-            showFlash('{% if alumno %}Alumno actualizado correctamente{% else %}Alumno creado correctamente{% endif %}', 'success');
-        }
-    });
+    (() => {
+        const form = document.getElementById('alumno-form');
+        const submitButton = document.getElementById('alumno-submit');
+        const endpoint = '{% if alumno %}/api/v1/alumnos/{{ alumno.id }}{% else %}/api/v1/alumnos{% endif %}';
+        const method = '{% if alumno %}PATCH{% else %}POST{% endif %}';
+        const isEditing = {{ 'true' if alumno else 'false' }};
+
+        const optionalValue = (fieldName) => {
+            const value = form.elements[fieldName].value.trim();
+            return value === '' ? null : value;
+        };
+
+        const safeFlash = (message, type = 'error') => {
+            const text = document.createElement('span');
+            text.textContent = message;
+            showFlash(text.innerHTML, type);
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (submitButton.disabled) return;
+
+            submitButton.disabled = true;
+            let restoreButton = true;
+
+            const payload = {
+                dni: form.elements.dni.value.trim(),
+                nombre: form.elements.nombre.value.trim(),
+                apellido: form.elements.apellido.value.trim(),
+                email: form.elements.email.value.trim(),
+                telefono: optionalValue('telefono'),
+                fecha_nacimiento: optionalValue('fecha_nacimiento'),
+                usuario_github: optionalValue('usuario_github'),
+                usuario_gitlab: optionalValue('usuario_gitlab'),
+                perfil_linkedin: optionalValue('perfil_linkedin')
+            };
+
+            if (isEditing) {
+                payload.activo = form.elements.activo.checked;
+            }
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(endpoint, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 200 || response.status === 201) {
+                    restoreButton = false;
+                    form.closest('.modal-overlay')?.remove();
+                    showFlash('{% if alumno %}Alumno actualizado correctamente{% else %}Alumno creado correctamente{% endif %}', 'success');
+                    const tableBody = document.getElementById('alumnos-table-body');
+                    if (tableBody) htmx.trigger(tableBody, 'load');
+                    return;
+                }
+
+                if (response.status === 401 || response.status === 403) {
+                    restoreButton = false;
+                    localStorage.removeItem('auth_token');
+                    if (window.Alpine?.store('auth')) Alpine.store('auth').clearToken();
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const errorData = await response.json().catch(() => null);
+                if (response.status === 409) {
+                    const duplicateMessage = typeof errorData?.detail === 'string'
+                        ? errorData.detail
+                        : 'Ya existe un alumno con esos datos.';
+                    safeFlash(duplicateMessage);
+                } else if (response.status === 422) {
+                    showFlash('Revisá los datos ingresados e intentá nuevamente.', 'error');
+                } else {
+                    showFlash('No se pudo guardar el alumno. Intentá nuevamente.', 'error');
+                }
+            } catch (error) {
+                showFlash('No se pudo conectar con el servidor.', 'error');
+            } finally {
+                if (restoreButton) submitButton.disabled = false;
+            }
+        });
+    })();
 </script>

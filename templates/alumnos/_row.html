@@ -1,3 +1,4 @@
+{% for alumno in alumnos %}
 <tr>
     <td>{{ alumno.dni }}</td>
     <td>{{ alumno.apellido }}, {{ alumno.nombre }}</td>
@@ -40,3 +41,8 @@
         </div>
     </td>
 </tr>
+{% else %}
+<tr>
+    <td colspan="6" class="text-center">No hay alumnos para mostrar.</td>
+</tr>
+{% endfor %}

@@ -14,7 +14,7 @@
             <p>Inicia sesión para acceder al sistema</p>
         </div>
 
-        <form id="login-form" hx-post="/api/v1/auth/login" hx-target="#login-form" hx-swap="outerHTML" class="login-form">
+        <form id="login-form" class="login-form">
             <div class="form-group">
                 <label for="username">Usuario</label>
                 <input type="text" id="username" name="username" required autocomplete="username" autofocus>
@@ -33,21 +33,46 @@
 </div>
 
 <script>
-    document.addEventListener('htmx:afterRequest', (evt) => {
-        if (evt.detail.successful && evt.detail.xhr.response) {
-            try {
-                const response = JSON.parse(evt.detail.xhr.response);
-                if (response.access_token) {
-                    Alpine.store('auth').setToken(response.access_token);
-                    window.location.href = '/dashboard';
-                }
-            } catch (e) {}
-        }
-    });
+    const loginForm = document.getElementById('login-form');
 
-    document.addEventListener('htmx:responseError', (evt) => {
-        if (evt.detail.xhr.status === 401) {
-            showFlash('Credenciales inválidas', 'error');
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+        if (submitButton.disabled) {
+            return;
+        }
+
+        submitButton.disabled = true;
+
+        const username = loginForm.elements.username.value;
+        const password = loginForm.elements.password.value;
+
+        try {
+            const response = await fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.access_token) {
+                Alpine.store('auth').setToken(data.access_token);
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            if (response.status === 401) {
+                showFlash('Usuario o contraseña incorrectos.', 'error');
+            } else if (response.status === 422) {
+                showFlash('Revisá los datos ingresados e intentá nuevamente.', 'error');
+            } else {
+                showFlash('No se pudo iniciar sesión. Intentá nuevamente.', 'error');
+            }
+        } catch (error) {
+            showFlash('No se pudo conectar con el servidor. Intentá nuevamente.', 'error');
+        } finally {
+            submitButton.disabled = false;
         }
     });
 </script>
