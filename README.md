@@ -145,6 +145,34 @@ Este bootstrap es exclusivo para el primer administrador. El endpoint normal
 `POST /api/v1/auth/users` exige un administrador autenticado; después del bootstrap, usá ese endpoint
 para crear todos los administradores adicionales.
 
+### 9. Preparar la base exclusiva de tests
+
+Pytest resetea el esquema al inicio de la sesión, por lo que requiere una base PostgreSQL dedicada.
+Créela una vez dentro del contenedor PostgreSQL administrado por Compose (este comando no toca la
+base de desarrollo):
+
+```bash
+docker compose up -d postgres
+docker compose exec postgres createdb -U postgres bunker4_alumnos_test
+```
+
+Antes de ejecutar pytest, exporte explícitamente ambas variables:
+
+```bash
+export TEST_DATABASE_URL='postgresql+psycopg://postgres:<password>@localhost:5432/bunker4_alumnos_test'
+export ALLOW_TEST_DATABASE_RESET=true
+pytest
+```
+
+La regla es estricta: el nombre de la base debe terminar exactamente en `_test`, el target
+normalizado `host + puerto + nombre de base` debe ser distinto del de `DATABASE_URL`, el dialecto
+debe ser PostgreSQL y la autorización debe ser el valor minúsculo exacto `true`. No se admite
+pytest-xdist porque todos los workers compartirían el mismo esquema.
+
+> **ADVERTENCIA:** pytest aborta antes de construir el engine destructivo si falta alguna variable,
+> si la configuración es ambigua o si `TEST_DATABASE_URL` apunta a desarrollo. Nunca use
+> `bunker4_alumnos` como base de tests.
+
 ## Activación del environment en cada arranque (IMPORTANTE)
 
 Cada vez que abras una terminal nueva para trabajar en el proyecto:
@@ -194,7 +222,7 @@ direnv allow
 | Resetear DB local (borra datos) | `docker compose down -v`        |
 | Logs DB local             | `docker compose logs -f postgres`     |
 | Migraciones (ambos)       | `alembic upgrade head`                |
-| Tests                     | `pytest` (cuando existan)             |
+| Tests                     | `TEST_DATABASE_URL=... ALLOW_TEST_DATABASE_RESET=true pytest` |
 | Lint                      | `ruff check .` (cuando exista config) |
 | Formato                   | `ruff format .`                       |
 

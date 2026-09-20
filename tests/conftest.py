@@ -13,6 +13,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+# Import order is a safety boundary: bootstrap validates before app.core.database
+# creates its engine.
+# isort: off
+from safety_tests.database_bootstrap import require_safe_test_database
 from app.core.database import Base, get_db
 from app.core.security import get_password_hash
 from app.main import app
@@ -24,9 +28,7 @@ from app.models.materia import Materia
 from app.models.usuario import RolUsuario, Usuario
 from app.services.curso_service import CursoService
 from app.services.inscripcion_service import InscripcionService
-
-# Test database URL (uses same local Docker Postgres)
-TEST_DATABASE_URL = "postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos"
+# isort: on
 
 
 @pytest.fixture(scope="session")
@@ -39,18 +41,21 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def test_engine() -> AsyncGenerator[AsyncEngine, None]:
-    """Create test database engine."""
+    """Reset and create the schema only in an explicitly authorized test database."""
+    validated_database = require_safe_test_database()
     engine = create_async_engine(
-        TEST_DATABASE_URL,
+        validated_database.url,
         echo=False,
         poolclass=NullPool,
     )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+    try:
+        async with engine.begin() as conn:
+            require_safe_test_database()
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+        yield engine
+    finally:
+        await engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="function")

@@ -8,7 +8,9 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
-  DATABASE_URL: "postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos"
+  DATABASE_URL: "postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos_ci"
+  TEST_DATABASE_URL: "postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos_test"
+  ALLOW_TEST_DATABASE_RESET: "true"
   SECRET_KEY: "test-secret-key-for-ci-only-32-bytes-minimum"
   DEBUG: "true"
 
@@ -38,7 +40,7 @@ jobs:
           ruff format --check .
 
       - name: Run MyPy (strict)
-        run: mypy --strict app/
+        run: mypy --strict app/ safety_tests/database_guard.py safety_tests/database_bootstrap.py
 
   tests:
     name: Tests (Unit + Integration)
@@ -49,11 +51,11 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: bunker4_alumnos
+          POSTGRES_DB: bunker4_alumnos_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U postgres -d bunker4_alumnos_test"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -74,19 +76,28 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
+      - name: Verify database guard without application imports
+        run: pytest safety_tests/test_database_guard.py --confcutdir=safety_tests -q
+
       - name: Wait for Postgres
         run: |
           for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U postgres && break
+            pg_isready -h localhost -p 5432 -U postgres -d bunker4_alumnos_test && break
             sleep 1
           done
+
+      - name: Create isolated CI application database
+        env:
+          PGPASSWORD: postgres
+        run: >-
+          psql --host localhost --username postgres --dbname postgres
+          --set ON_ERROR_STOP=1 --command 'CREATE DATABASE bunker4_alumnos_ci'
 
       - name: Run Alembic migrations
         run: alembic upgrade head
 
-      - name: Run tests with coverage
-        run: |
-          pytest --cov=app --cov-report=xml --cov-report=term-missing -q
+      - name: Run tests serially with coverage
+        run: pytest --cov=app --cov-report=xml --cov-report=term-missing -q
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

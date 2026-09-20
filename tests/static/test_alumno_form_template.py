@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 TEMPLATE_PATH = Path(__file__).parents[2] / "templates" / "alumnos" / "_form.html"
 
 
