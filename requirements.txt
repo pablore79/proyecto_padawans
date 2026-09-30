@@ -35,3 +35,6 @@ email-validator==2.2.0
 
 # Logging
 structlog==24.4.0
+
+# Agregar debugging
+ipdb

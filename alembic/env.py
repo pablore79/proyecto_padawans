@@ -8,6 +8,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+import ipdb
+
+# ipdb.set_trace(context=15)
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
