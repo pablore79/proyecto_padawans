@@ -1,1 +1,1 @@
-"""Administrative command-line utilities."""
+# Scripts package for Bunker4 Alumnos
