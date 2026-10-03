@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: pablore79/proyecto_padawans:latest
+    image: pablore79/proyecto_padawans:0.1
     container_name: bunker4_app
     restart: unless-stopped
     env_file: .env
