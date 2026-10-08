@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Bunker4 Alumnos{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <p class="dashboard-subtitle" x-text="'Bienvenido, ' + $store.auth.userName"></p>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card" x-show="$store.auth.userRole === 'admin'">
+            <div class="card-icon">👥</div>
+            <h3>Alumnos</h3>
+            <p class="card-count" id="alumnos-count">Cargando...</p>
+            <a href="/alumnos" class="btn btn-secondary btn-sm" hx-boost="true">Ver todos</a>
+        </div>
+
+        <div class="dashboard-card" x-show="$store.auth.userRole === 'admin'">
+            <div class="card-icon">📚</div>
+            <h3>Cursos</h3>
+            <p class="card-count" id="cursos-count">Cargando...</p>
+            <a href="/cursos" class="btn btn-secondary btn-sm" hx-boost="true">Ver todos</a>
+        </div>
+
+        <div class="dashboard-card" x-show="$store.auth.userRole === 'admin' || $store.auth.userRole === 'docente'">
+            <div class="card-icon">📝</div>
+            <h3>Inscripciones</h3>
+            <p class="card-count" id="inscripciones-count">Cargando...</p>
+            <a href="/cursos" class="btn btn-secondary btn-sm" hx-boost="true">Gestionar</a>
+        </div>
+
+        <div class="dashboard-card" x-show="$store.auth.userRole === 'alumno'">
+            <div class="card-icon">🎓</div>
+            <h3>Mis Cursos</h3>
+            <p class="card-count" id="mis-cursos-count">Cargando...</p>
+            <a href="#" hx-get="/api/v1/alumno/me/cursos" hx-target="#mis-cursos-modal" hx-swap="innerHTML" class="btn btn-secondary btn-sm">Ver</a>
+        </div>
+
+        <div class="dashboard-card" x-show="$store.auth.userRole === 'docente'">
+            <div class="card-icon">👨‍🏫</div>
+            <h3>Mis Cursos (Docente)</h3>
+            <p class="card-count" id="docente-cursos-count">Cargando...</p>
+            <a href="#" hx-get="/api/v1/docente/me/cursos" hx-target="#docente-cursos-modal" hx-swap="innerHTML" class="btn btn-secondary btn-sm">Ver</a>
+        </div>
+    </div>
+
+    <div class="dashboard-recent" x-show="$store.auth.userRole === 'admin'">
+        <h2>Actividad Reciente</h2>
+        <div id="recent-activity" hx-get="/api/v1/admin/recent-activity" hx-trigger="load, every30s"></div>
+    </div>
+</div>
+
+<div id="mis-cursos-modal"></div>
+<div id="docente-cursos-modal"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if ($store.auth.isAuthenticated) {
+            loadDashboardStats();
+        }
+    });
+
+    async function loadDashboardStats() {
+        try {
+            if ($store.auth.userRole === 'admin') {
+                const [alumnos, cursos, inscripciones] = await Promise.all([
+                    fetch('/api/v1/alumnos?limit=1', { headers: authHeaders() }).then(r => r.json()),
+                    fetch('/api/v1/cursos?limit=1', { headers: authHeaders() }).then(r => r.json()),
+                    fetch('/api/v1/cursos/1/inscripciones?limit=1', { headers: authHeaders() }).catch(() => ({ total: 0 })).then(r => r.json())
+                ]);
+                document.getElementById('alumnos-count').textContent = alumnos.total || 0;
+                document.getElementById('cursos-count').textContent = cursos.total || 0;
+                document.getElementById('inscripciones-count').textContent = inscripciones.total || 0;
+            } else if ($store.auth.userRole === 'alumno') {
+                const res = await fetch('/api/v1/alumno/me/cursos', { headers: authHeaders() });
+                const data = await res.json();
+                document.getElementById('mis-cursos-count').textContent = data.cursos?.length || 0;
+            } else if ($store.auth.userRole === 'docente') {
+                const res = await fetch('/api/v1/docente/me/cursos', { headers: authHeaders() });
+                const data = await res.json();
+                document.getElementById('docente-cursos-count').textContent = data.cursos?.length || 0;
+            }
+        } catch (e) {
+            console.error('Error loading dashboard stats', e);
+        }
+    }
+
+    function authHeaders() {
+        const token = localStorage.getItem('auth_token');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    }
+</script>
+{% endblock %}

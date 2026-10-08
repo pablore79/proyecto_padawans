@@ -1,0 +1,3 @@
+{% for alumno in alumnos %}
+<option value="{{ alumno.id }}">{{ alumno.apellido }}, {{ alumno.nombre }} (DNI: {{ alumno.dni }})</option>
+{% endfor %}

@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bunker4_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bunker4_alumnos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:6.1.1
+    container_name: bunker4_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  
+  app:
+    image: bunker4-alumnos:0.1
+    container_name: bunker4-alumnos-instancia
+    ports:
+    - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - APP_NAME=${APP_NAME:-Bunker4 Alumnos}
+      - APP_ENV=production
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEFAULT_PAGE_SIZE=${DEFAULT_PAGE_SIZE:-20}
+      - MAX_PAGE_SIZE=${MAX_PAGE_SIZE:-100}
+ 
+
+volumes:
+  postgres_data:

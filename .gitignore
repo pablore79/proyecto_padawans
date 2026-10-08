@@ -149,6 +149,7 @@ activemq-data/
 
 # Environments
 .env
+.env.test
 .envrc
 .venv
 env/
@@ -205,6 +206,9 @@ tempCodeRunnerFile.py
 
 # Ruff stuff:
 .ruff_cache/
+
+# Project specific
+.atl/
 
 # PyPI configuration file
 .pypirc
