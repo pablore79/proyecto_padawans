@@ -1,0 +1,55 @@
+<div class="modal-overlay" x-data="{ open: true }" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.outside="open = false; setTimeout(() => $el.remove(), 150)">
+    <div class="modal" @click.inside>
+        <div class="modal-header">
+            <h2>{% if curso %}Editar Curso{% else %}Nuevo Curso{% endif %}</h2>
+            <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
+        </div>
+        <form hx-post="{% if curso %}/api/v1/cursos/{{ curso.id }}{% else %}/api/v1/cursos{% endif %}" 
+              hx-target="#modal-container" hx-swap="outerHTML"
+              class="form">
+            <input type="hidden" name="_method" value="{% if curso %}PATCH{% else %}POST{% endif %}">
+            
+            <div class="form-group">
+                <label for="nombre">Nombre *</label>
+                <input type="text" id="nombre" name="nombre" required maxlength="100" 
+                       value="{{ curso.nombre if curso else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" name="descripcion" maxlength="500" rows="3">{{ curso.descripcion if curso else '' }}</textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="cupos">Cupos *</label>
+                    <input type="number" id="cupos" name="cupos" required min="1" max="500" 
+                           value="{{ curso.cupos if curso else 20 }}">
+                </div>
+            </div>
+            
+            {% if curso %}
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="activo" {% if curso.activo %}checked{% endif %}>
+                    <span>Activo</span>
+                </label>
+            </div>
+            {% endif %}
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @click="open = false; setTimeout(() => $el.remove(), 150)">Cancelar</button>
+                <button type="submit" class="btn btn-primary">{% if curso %}Guardar cambios{% else %}Crear curso{% endif %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('htmx:afterRequest', (evt) => {
+        if (evt.detail.successful && evt.detail.target.id === 'modal-container') {
+            document.getElementById('cursos-table-body')?.dispatchEvent(new Event('load'));
+            showFlash('{% if curso %}Curso actualizado correctamente{% else %}Curso creado correctamente{% endif %}', 'success');
+        }
+    });
+</script>

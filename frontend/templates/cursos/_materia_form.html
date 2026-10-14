@@ -1,0 +1,32 @@
+<div class="modal-overlay" x-data="{ open: true }" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.outside="open = false; setTimeout(() => $el.remove(), 150)">
+    <div class="modal" @click.inside>
+        <div class="modal-header">
+            <h2>{% if materia %}Editar Materia{% else %}Nueva Materia{% endif %}</h2>
+            <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
+        </div>
+        <form hx-post="{% if materia %}/api/v1/materias/{{ materia.id }}{% else %}/api/v1/cursos/{{ curso_id }}/materias{% endif %}" 
+              hx-target="#modal-container" hx-swap="outerHTML"
+              class="form">
+            <input type="hidden" name="_method" value="{% if materia %}PATCH{% else %}POST{% endif %}">
+            {% if materia %}
+            <input type="hidden" name="curso_id" value="{{ curso_id }}">
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="nombre">Nombre *</label>
+                <input type="text" id="nombre" name="nombre" required maxlength="100" 
+                       value="{{ materia.nombre if materia else '' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" name="descripcion" maxlength="500" rows="3">{{ materia.descripcion if materia else '' }}</textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @click="open = false; setTimeout(() => $el.remove(), 150)">Cancelar</button>
+                <button type="submit" class="btn btn-primary">{% if materia %}Guardar cambios{% else %}Crear materia{% endif %}</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Cursos - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Mis Cursos</h1>
+        <span class="text-gray-600">Alumno: {{ user.username }}</span>
+    </div>
+
+    <div id="cursos-container">
+        <div class="animate-pulse space-y-4" hx-get="/api/v1/alumno/me/cursos" hx-trigger="load" hx-target="#cursos-container">
+            <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+            <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+            <div class="h-8 bg-gray-200 rounded w-1/3"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.target.id === 'cursos-container') {
+            // Initialize any interactive elements after HTMX swap
+        }
+    });
+</script>
+{% endblock %}

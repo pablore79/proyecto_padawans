@@ -17,38 +17,87 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - bunker4-network
 
-  adminer:
-    image: adminer:6.1.1
-    container_name: bunker4_adminer
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bunker4-backend
     ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-  
-  app:
-    image: bunker4-alumnos:0.1
-    container_name: bunker4-alumnos-instancia
-    ports:
-    - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file: .env
+      - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/bunker4_alumnos
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - APP_NAME=${APP_NAME:-Bunker4 Alumnos}
+      - CORS_ORIGINS=["http://localhost:8080","http://frontend:8080"]
+      - APP_NAME=${APP_NAME:-Bunker4 Alumnos API}
       - APP_ENV=production
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DEFAULT_PAGE_SIZE=${DEFAULT_PAGE_SIZE:-20}
       - MAX_PAGE_SIZE=${MAX_PAGE_SIZE:-100}
- 
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bunker4-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bunker4-frontend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - CORS_ORIGINS=["http://localhost:8080"]
+      - APP_NAME=${APP_NAME:-Bunker4 Alumnos Frontend}
+      - APP_ENV=production
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bunker4-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  adminer:
+    image: adminer:6.1.1
+    container_name: bunker4_adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bunker4-network
+
+networks:
+  bunker4-network:
+    driver: bridge
 
 volumes:
   postgres_data:

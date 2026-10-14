@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Bunker4 Alumnos - Inicio{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <h1>Bunker4 Alumnos</h1>
+        <p class="hero-subtitle">Sistema de administración de alumnos para la jornada formativa Bunker4</p>
+        <div class="hero-actions">
+            <a href="/login" class="btn btn-primary btn-lg" hx-boost="true">Iniciar sesión</a>
+            <a href="/docs" class="btn btn-secondary btn-lg" target="_blank">Ver API Docs</a>
+        </div>
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature">
+        <div class="feature-icon">👥</div>
+        <h3>Gestión de Alumnos</h3>
+        <p>Alta, baja, modificación y listado con búsqueda y paginación</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">📚</div>
+        <h3>Cursos y Materias</h3>
+        <p>Creación de cursos con cupos, materias asociadas y control de capacidad</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">📝</div>
+        <h3>Inscripciones</h3>
+        <p>Inscripción de alumnos con validación de cupos y estados</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">👨‍🏫</div>
+        <h3>Roles y Permisos</h3>
+        <p>Admin, Docente y Alumno con accesos diferenciados</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">🔐</div>
+        <h3>Autenticación JWT</h3>
+        <p>Tokens seguros con expiración y refresh automático</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Auditoría Completa</h3>
+        <p>Registro de created_by/updated_by en todas las operaciones</p>
+    </div>
+</div>
+{% endblock %}

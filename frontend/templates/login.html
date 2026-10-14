@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión - Bunker4 Alumnos{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <h1>Bunker4 Alumnos</h1>
+            <p>Inicia sesión para acceder al sistema</p>
+        </div>
+
+        <form id="login-form" class="login-form">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" name="username" required autocomplete="username" autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Iniciar sesión</button>
+        </form>
+
+        <div class="login-footer">
+            <p>¿No tienes cuenta? Contacta al administrador.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const loginForm = document.getElementById('login-form');
+
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+        if (submitButton.disabled) {
+            return;
+        }
+
+        submitButton.disabled = true;
+
+        const username = loginForm.elements.username.value;
+        const password = loginForm.elements.password.value;
+
+        try {
+            const response = await fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.access_token) {
+                Alpine.store('auth').setToken(data.access_token);
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            if (response.status === 401) {
+                showFlash('Usuario o contraseña incorrectos.', 'error');
+            } else if (response.status === 422) {
+                showFlash('Revisá los datos ingresados e intentá nuevamente.', 'error');
+            } else {
+                showFlash('No se pudo iniciar sesión. Intentá nuevamente.', 'error');
+            }
+        } catch (error) {
+            showFlash('No se pudo conectar con el servidor. Intentá nuevamente.', 'error');
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

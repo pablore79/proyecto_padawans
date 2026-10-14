@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bunker4 Alumnos{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="darkMode ? 'dark' : ''">
+    <header class="header">
+        <div class="container header-content">
+            <a href="/" class="logo" hx-boost="true">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span>Bunker4</span>
+            </a>
+            <nav class="nav" x-show="isAuthenticated" x-cloak>
+                <a href="/alumnos" hx-boost="true">Alumnos</a>
+                <a href="/cursos" hx-boost="true">Cursos</a>
+                <a href="/dashboard" hx-boost="true">Dashboard</a>
+            </nav>
+            <div class="header-actions">
+                <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="btn btn-ghost btn-sm" title="Toggle dark mode">
+                    <span x-show="!darkMode">🌙</span>
+                    <span x-show="darkMode">☀️</span>
+                </button>
+                <div x-show="!isAuthenticated">
+                    <a href="/login" class="btn btn-primary" hx-boost="true">Iniciar sesión</a>
+                </div>
+                <div x-show="isAuthenticated" class="user-menu">
+                    <span class="user-name" x-text="userName"></span>
+                    <button @click="logout()" class="btn btn-ghost btn-sm">Salir</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main" role="main">
+        <div class="container">
+            {% block flash_messages %}
+            <div id="flash-messages" hx-ext="response-targets">
+                {% if flash_message %}
+                <div class="flash flash-{{ flash_type }}" x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" x-transition>
+                    <span x-text="flash_message"></span>
+                    <button @click="show = false" class="flash-close">&times;</button>
+                </div>
+                {% endif %}
+            </div>
+            {% endblock %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Bunker4 - Sistema de Administración de Alumnos</p>
+        </div>
+    </footer>
+
+    <script>
+        // Alpine.js global store for auth
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('auth', {
+                isAuthenticated: false,
+                userName: '',
+                userRole: '',
+                token: localStorage.getItem('auth_token') || '',
+                
+                init() {
+                    if (this.token) {
+                        this.isAuthenticated = true;
+                        this.decodeToken();
+                    }
+                },
+                
+                setToken(token) {
+                    this.token = token;
+                    localStorage.setItem('auth_token', token);
+                    this.isAuthenticated = true;
+                    this.decodeToken();
+                },
+                
+                clearToken() {
+                    this.token = '';
+                    localStorage.removeItem('auth_token');
+                    this.isAuthenticated = false;
+                    this.userName = '';
+                    this.userRole = '';
+                },
+                
+                decodeToken() {
+                    try {
+                        const payload = JSON.parse(atob(this.token.split('.')[1]));
+                        this.userName = payload.username;
+                        this.userRole = payload.rol;
+                    } catch (e) {
+                        console.error('Error decoding token', e);
+                    }
+                },
+                
+                logout() {
+                    this.clearToken();
+                    window.location.href = '/login';
+                }
+            });
+        });
+
+        // HTMX config for auth
+        document.body.addEventListener('htmx:configRequest', (evt) => {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                evt.detail.headers['Authorization'] = `Bearer ${token}`;
+            }
+        });
+
+        // Handle auth errors
+        document.body.addEventListener('htmx:responseError', (evt) => {
+            if (evt.detail.xhr.status === 401 || evt.detail.xhr.status === 403) {
+                Alpine.store('auth').clearToken();
+                window.location.href = '/login';
+            }
+        });
+
+        // Flash messages via HTMX
+        document.body.addEventListener('htmx:afterSwap', (evt) => {
+            if (evt.detail.xhr.getResponseHeader('HX-Trigger')) {
+                const triggers = JSON.parse(evt.detail.xhr.getResponseHeader('HX-Trigger'));
+                if (triggers.flash) {
+                    showFlash(triggers.flash.message, triggers.flash.type);
+                }
+            }
+        });
+
+        function showFlash(message, type = 'info') {
+            const container = document.getElementById('flash-messages');
+            if (!container) return;
+            const div = document.createElement('div');
+            div.className = `flash flash-${type}`;
+            div.innerHTML = `<span>${message}</span><button class="flash-close">&times;</button>`;
+            div.querySelector('.flash-close').addEventListener('click', () => div.remove());
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
