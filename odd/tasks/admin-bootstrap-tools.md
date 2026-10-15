@@ -24,7 +24,7 @@ The backend Docker ignore file excludes `scripts/`, which removes `scripts.creat
 ## Tasks
 - [x] A1 — Include the admin bootstrap package in the backend image build context and add root build/down helpers.
 - [x] A2 — Document build, stop, rebuild, and first-admin commands in `DEPLOY.md`.
-- [x] A3 — Validate scripts and Compose configuration and inspect the scoped diff. The Conventional Commit work unit remains pending for the parent.
+- [x] A3 — Validate scripts and Compose configuration, inspect the scoped diff, and create a Conventional Commit work unit.
 
 ## Acceptance Criteria
 - `backend/scripts/` is no longer excluded by `backend/.dockerignore`.
@@ -48,7 +48,7 @@ The backend Docker ignore file excludes `scripts/`, which removes `scripts.creat
 - Validation passed: `bash -n build.sh down.sh`; `docker compose -f docker-compose.yml config --quiet`; and `git diff --check`. The shell reported only the existing Conda activation warning that `PYTHONNOUSERSITE` was overwritten.
 - File-mode inspection confirms `build.sh` and `down.sh` are executable (`755`); changed documentation and configuration files remain `644`.
 - No Docker image build, container lifecycle operation, or network operation was run.
-- Commit hash: pending parent-owned commit.
+- Work-unit commit: `6ae78c5` (`fix(admin): include bootstrap script and add compose helpers`).
 
 ## Next Step
-Let the parent create the Conventional Commit work unit and record its identity.
+No further work remains for this task. Rebuild and recreate the backend service before running the documented administrator bootstrap command.
