@@ -65,7 +65,6 @@ tmp/
 # Test files
 tests/
 safety_tests/
-scripts/
 
 # Frontend assets (not needed in backend)
 templates/

@@ -69,6 +69,37 @@ También puede ejecutar el comando anterior directamente desde la raíz. No use
 archivos Compose alternativos ni un Dockerfile en la raíz: los Dockerfiles de
 cada servicio son `backend/Dockerfile` y `frontend/Dockerfile`.
 
+## Construcción de imágenes
+
+Use `build.sh` para construir las imágenes definidas por el archivo Compose
+canónico. El script resuelve la raíz del repositorio, por lo que también puede
+invocarse mediante una ruta absoluta desde otro directorio.
+
+```bash
+# Construir todas las imágenes
+./build.sh
+
+# Construir solo la imagen del backend
+./build.sh backend
+```
+
+## Recrear el backend y crear el primer administrador
+
+Después de una modificación que afecte la imagen del backend, primero
+reconstruya la imagen y recree el servicio. Esto garantiza que el contenedor
+incluya los archivos actualizados antes de ejecutar el módulo de inicialización.
+Ejecute los siguientes comandos desde la raíz del repositorio.
+
+```bash
+./build.sh backend
+docker compose -f docker-compose.yml up -d --force-recreate backend
+docker compose -f docker-compose.yml exec backend python -m scripts.create_admin
+```
+
+El último comando solicita de forma interactiva el nombre de usuario, el correo
+electrónico y la contraseña. No incluya credenciales ni contraseñas en comandos,
+archivos versionados o historial de terminal.
+
 ## Verificación posterior al despliegue
 
 ```bash
@@ -89,8 +120,12 @@ curl http://localhost:8080/health
 Para detener los servicios sin eliminar los datos de PostgreSQL:
 
 ```bash
-docker compose -f docker-compose.yml down
+./down.sh
 ```
+
+`down.sh` ejecuta `docker compose down` sin aceptar argumentos, por lo que no
+puede propagar `-v` ni otras opciones que eliminen volúmenes nombrados. El
+volumen `postgres_data` se conserva.
 
 No ejecute comandos que eliminen volúmenes a menos que exista una copia de
 seguridad verificada y una autorización explícita para borrar los datos.
