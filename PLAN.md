@@ -27,11 +27,98 @@
 
 ---
 
+## 1.1 Arquitectura actual del monorepo
+
+El proyecto está organizado como un monorepo con servicios separados:
+
+- **`backend/`**: API REST FastAPI, expuesta bajo `/api/v1`, responsable de
+  reglas de negocio, persistencia, migraciones y autenticación JWT.
+- **`frontend/`**: BFF FastAPI que sirve templates Jinja2 y HTMX. Valida la
+  sesión con el backend y reenvía las llamadas API autenticadas.
+- **`postgres`**: PostgreSQL 16, persistido en el volumen nombrado
+  `postgres_data`.
+- **`adminer`**: interfaz local para inspección de la base de datos.
+
+`docker-compose.yml` define la red, los health checks y el orden de arranque.
+El frontend depende de un backend saludable y el backend de PostgreSQL.
+
+### Flujo BFF y sesión
+
+1. El frontend reenvía el login al backend.
+2. El backend emite el JWT y el frontend lo conserva en una cookie de sesión
+   `HttpOnly`, `SameSite=Lax` y de mismo origen.
+3. Las rutas HTML protegidas validan la cookie mediante `GET /api/v1/auth/me`.
+4. El proxy BFF inyecta el token como `Authorization: Bearer ...` al backend.
+5. El logout borra la cookie de sesión desde el servidor.
+
+### Operación local
+
+- `./deploy.sh` construye y recrea los servicios con
+  `up -d --build --force-recreate`.
+- `./build.sh [servicio]` detiene el proyecto sin borrar volúmenes y construye
+  todas las imágenes o solo el servicio indicado.
+- `./down.sh` detiene los servicios sin permitir el borrado accidental de
+  volúmenes.
+
+La guía operativa detallada está en [README.md](./README.md).
+
+---
+
+## 1.2 Contrato técnico: datos y API
+
+### Entidades y persistencia
+
+| Entidad | Datos principales | Restricciones y comportamiento |
+|---|---|---|
+| Alumno | `id`, `dni`, nombre, apellido, email, teléfono, fecha de nacimiento, perfiles, `activo`, auditoría | `dni` y email únicos; baja lógica mediante `activo=false`. |
+| Curso | `id`, nombre, descripción, `cupos`, `activo`, auditoría | Nombre único; baja lógica. |
+| Materia | `id`, `curso_id`, nombre, descripción, auditoría | Unidad asociada a un curso. |
+| Inscripción | `id`, `alumno_id`, `curso_id`, fecha, estado | Solo una inscripción activa por alumno y curso. |
+| Asignación docente | `id`, `usuario_id`, `curso_id` | Única por docente y curso. |
+| Usuario | `id`, username, email, hash de contraseña, `rol`, `alumno_id`, `activo`, auditoría | Username y email únicos; `alumno_id` solo para rol alumno. |
+
+Los timestamps usan UTC. La base usa UTF-8. Las mutaciones registran
+`created_by` y `updated_by`; no hay hard delete desde la API.
+
+### API versionada
+
+La API usa el prefijo `/api/v1`. Los listados aceptan `limit` (20 por defecto,
+100 máximo) y `offset`.
+
+| Área | Endpoints principales | Acceso |
+|---|---|---|
+| Auth | `POST /auth/login`, `GET /auth/me` | Público / autenticado |
+| Alumnos | CRUD `/alumnos` | Admin |
+| Cursos | CRUD `/cursos` | Admin |
+| Materias | CRUD anidado por curso | Admin |
+| Inscripciones | Crear, baja y listado por curso | Admin; lectura también para docente asignado |
+| Docentes | Asignación y desasignación por curso | Admin |
+| Vistas por rol | `/docente/me/cursos`, `/alumno/me/cursos` | Rol correspondiente |
+
+Los errores siguen el formato `{ "detail": "...", "code": "..." }`.
+Las contraseñas usan bcrypt, los tokens JWT HS256 expiran a los 60 minutos y
+las solicitudes se registran con `request_id`.
+
+### Supuestos y riesgos técnicos
+
+- `DATABASE_URL` selecciona el ambiente local o remoto; ambos comparten la
+  misma cadena de migraciones Alembic.
+- La implementación usa exclusivamente SQLAlchemy async y `AsyncSession`.
+- La concurrencia de cupos se protege mediante transacciones y bloqueo de las
+  inscripciones activas.
+- `SECRET_KEY` debe generarse por entorno y nunca versionarse.
+- Los tests de integración usan una base aislada y requieren autorización
+  explícita para resetearla.
+
+---
+
 ## 2. Diagramas de Arquitectura y Modelo de Datos
 
 ### 2.1 Diagrama Entidad-Relación (ERD)
 
-El siguiente diagrama Mermaid representa el modelo de datos definido en el PRD §6. Se puede visualizar y editar en [mermaid.live](https://mermaid.live).
+El siguiente diagrama Mermaid representa el modelo de datos del contrato técnico
+descrito en la sección 1.2. Se puede visualizar y editar en
+[mermaid.live](https://mermaid.live).
 
 ```mermaid
 erDiagram

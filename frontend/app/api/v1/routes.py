@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import httpx
@@ -18,6 +19,56 @@ async def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "frontend"}
 
 
+@router.post("/api/v1/auth/login")
+async def login_proxy(
+    request: Request,
+    backend_client: httpx.AsyncClient = Depends(get_backend_client),
+) -> Response:
+    """Proxy login and retain the issued token in a same-origin session cookie."""
+    headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() not in {"host", "authorization"}
+    }
+
+    try:
+        backend_response = await backend_client.request(
+            method=request.method,
+            url="/api/v1/auth/login",
+            headers=headers,
+            content=await request.body(),
+        )
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail="Backend no disponible") from e
+
+    response = Response(
+        content=backend_response.content,
+        status_code=backend_response.status_code,
+        headers=dict(backend_response.headers),
+        media_type=backend_response.headers.get("content-type"),
+    )
+    if backend_response.is_success:
+        payload = json.loads(backend_response.content)
+        access_token = payload.get("access_token") if isinstance(payload, dict) else None
+        if isinstance(access_token, str):
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                samesite="lax",
+                secure=request.url.scheme == "https",
+            )
+    return response
+
+
+@router.post("/api/v1/auth/logout", status_code=204)
+async def logout() -> Response:
+    """Clear the same-origin session cookie."""
+    response = Response(status_code=204)
+    response.delete_cookie("access_token")
+    return response
+
+
 # Proxy all API calls to backend
 @router.api_route(
     "/api/v1/{path:path}",
@@ -31,8 +82,11 @@ async def proxy_api(
 ) -> Response:
     """Proxy all API requests to backend."""
     # Build headers
-    headers = dict(request.headers)
-    headers.pop("host", None)
+    headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() not in {"host", "authorization"}
+    }
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
@@ -88,6 +142,34 @@ async def alumnos_page(
     return templates.TemplateResponse("alumnos/list.html", {"request": request, "user": user})
 
 
+@router.get("/alumnos/list", response_class=HTMLResponse, include_in_schema=False)
+async def alumnos_list_partial(
+    request: Request,
+    user: dict[str, Any] = Depends(require_role("admin")),
+    backend_client: httpx.AsyncClient = Depends(get_backend_client),
+    token: str | None = Depends(get_token),
+) -> Response:
+    """Render the alumno rows returned by the backend for HTMX requests."""
+    if token is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    try:
+        response = await backend_client.get(
+            "/api/v1/alumnos",
+            headers={"Authorization": f"Bearer {token}"},
+            params=dict(request.query_params),
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail="Error comunicándose con el backend") from e
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail="Backend no disponible") from e
+
+    payload = response.json()
+    alumnos = payload.get("items", []) if isinstance(payload, dict) else []
+    return templates.TemplateResponse("alumnos/_row.html", {"request": request, "alumnos": alumnos})
+
+
 @router.get("/alumnos/nuevo", response_class=HTMLResponse, include_in_schema=False)
 async def alumno_nuevo(
     request: Request, user: dict[str, Any] = Depends(require_role("admin"))
@@ -98,9 +180,27 @@ async def alumno_nuevo(
 
 @router.get("/alumnos/{alumno_id}/editar", response_class=HTMLResponse, include_in_schema=False)
 async def alumno_editar(
-    request: Request, alumno_id: int, user: dict[str, Any] = Depends(require_role("admin"))
+    request: Request,
+    alumno_id: int,
+    user: dict[str, Any] = Depends(require_role("admin")),
+    backend_client: httpx.AsyncClient = Depends(get_backend_client),
+    token: str | None = Depends(get_token),
 ) -> Response:
-    context = {"request": request, "alumno_id": alumno_id, "user": user}
+    """Load the alumno from the backend before rendering the edit form."""
+    if token is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    try:
+        response = await backend_client.get(
+            f"/api/v1/alumnos/{alumno_id}", headers={"Authorization": f"Bearer {token}"}
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail="Error comunicándose con el backend") from e
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail="Backend no disponible") from e
+
+    context = {"request": request, "alumno": response.json(), "user": user}
     return templates.TemplateResponse("alumnos/_form.html", context)
 
 

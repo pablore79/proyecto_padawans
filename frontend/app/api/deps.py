@@ -3,11 +3,8 @@ from typing import Any
 
 import httpx
 from fastapi import Depends, HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import settings
-
-security = HTTPBearer(auto_error=False)
 
 
 async def get_backend_client() -> AsyncGenerator[httpx.AsyncClient, None]:
@@ -16,13 +13,22 @@ async def get_backend_client() -> AsyncGenerator[httpx.AsyncClient, None]:
         yield client
 
 
+def get_token(request: Request) -> str | None:
+    """Extract a bearer token from a request header or the session cookie."""
+    authorization = request.headers.get("Authorization", "")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.casefold() == "bearer" and token:
+        return token
+    return request.cookies.get("access_token")
+
+
 async def get_current_user(
     request: Request,
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    token: str | None = Depends(get_token),
     backend_client: httpx.AsyncClient = Depends(get_backend_client),
 ) -> dict[str, Any]:
     """Get current user by validating token with backend."""
-    if not credentials:
+    if not token:
         raise HTTPException(
             status_code=401,
             detail="No autenticado",
@@ -32,14 +38,14 @@ async def get_current_user(
     try:
         response = await backend_client.get(
             "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {credentials.credentials}"},
+            headers={"Authorization": f"Bearer {token}"},
         )
         if response.status_code == 401:
             raise HTTPException(status_code=401, detail="Token inválido o expirado")
         response.raise_for_status()
         user_data: dict[str, Any] = response.json()
         request.state.user = user_data
-        request.state.token = credentials.credentials
+        request.state.token = token
         return user_data
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
@@ -53,7 +59,7 @@ def require_role(*allowed_roles: str) -> Callable[..., Any]:
     """Dependency factory for role-based access control."""
 
     async def role_checker(user: dict[str, Any] = Depends(get_current_user)) -> dict[str, Any]:
-        user_role = user.get("role")
+        user_role = user.get("rol", user.get("role"))
         if user_role not in allowed_roles:
             raise HTTPException(
                 status_code=403,
@@ -62,8 +68,3 @@ def require_role(*allowed_roles: str) -> Callable[..., Any]:
         return user
 
     return role_checker
-
-
-def get_token(request: Request) -> str | None:
-    """Extract token from request state."""
-    return getattr(request.state, "token", None)

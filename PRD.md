@@ -1,266 +1,126 @@
+# PRD — Sistema de Administración de Alumnos
+
 **Proyecto:** proyecto_padawans
 **Cliente interno:** Bunker4 (jornada formativa)
-**Versión:** 0.1.0 (inicial)
+**Versión:** 0.1.0
 **Estado:** Borrador
 
 ---
 
 ## 1. Resumen
 
-Sistema web para administrar alumnos de Bunker4: alta/baja/modificación de alumnos, gestión de cursos y materias, y autenticación por roles (admin, docente, alumno). Backend en FastAPI + SQLAlchemy sobre PostgreSQL. No incluye frontend dedicado en este alcance; se expone vía API REST documentada con OpenAPI.
+Sistema para administrar alumnos de Bunker4: altas, bajas y modificaciones de
+alumnos; gestión de cursos y materias; e interacción según los roles admin,
+docente y alumno.
+
+Este documento describe el problema, el alcance y las reglas de negocio. La
+arquitectura, el modelo de datos, los endpoints y las decisiones operativas se
+documentan en [PLAN.md](./PLAN.md).
 
 ## 2. Problema
 
-Bunker4 actualmente administra su lista de alumnos, los cursos en los que están inscriptos y quién queda a cargo de cada curso de forma manual (planillas, docs sueltos). Esto produce:
+Bunker4 administra alumnos, cursos e interesados de forma manual, mediante
+planillas y documentos dispersos. Esto ocasiona:
 
-- Duplicados de alumnos.
+- Alumnos duplicados.
 - Reportes inconsistentes.
-- Sin control de acceso: cualquiera con la planilla edita.
-- Dificultad para seguir cuántos alumnos hay por curso.
-- Dificultad para saber que alumno se encuentra interesado en que tema
+- Falta de control de acceso a la información.
+- Dificultad para conocer la ocupación de los cursos.
+- Dificultad para relacionar los intereses de aprendizaje de los alumnos con
+  las clases disponibles.
 
 ## 3. Objetivos
 
-- Centralizar la administración de alumnos y cursos en un único servicio.
-- Puesto que cad alumno llega con conocimientos distintos al taller, hace falta que tengan una lista de temas en los cuales estén interesados en aprender, y que puedan anotarse a las clases en las cuales se trabajaran esos mismos temas.
-- El entregable debe incluir agrupaciones de clases en los cuales se pueda avisar a un determinado grupo de alumnos interesados, que se trabajara ese día en uno de los temas en los que se han inscripto
-- Garantizar que cada operación quede registrada con quién y cuándo.
-- Permitir que tres roles distintos (admin, docente, alumno) accedan a funciones acotadas a su rol.
-- Asegurar que la base no quede inconsistente (inscripciones inválidas, cursos huérfanos).
+- Centralizar la administración de alumnos y cursos.
+- Permitir registrar los temas que interesan a cada alumno y las clases donde
+  se trabajan esos temas.
+- Permitir agrupar clases y comunicar su temática a los alumnos interesados.
+- Registrar quién y cuándo realiza cada operación.
+- Restringir las acciones según los roles admin, docente y alumno.
+- Evitar inconsistencias, como inscripciones inválidas o cursos sin control de
+  cupos.
 
-## 4. No objetivos (este alcance)
+## 4. Fuera de alcance actual
 
-- Frontend web/mobile dedicado.
-- Gestión de calificaciones/notas.
+- Gestión de calificaciones o notas.
 - Gestión de asistencia.
-- Reportes y dashboard.
-- Integraciones externas (Google Sheets, mail, etc.).
-- Multi-tenant.
+- Reportes y dashboard analítico.
+- Integraciones externas, como Google Sheets o correo electrónico.
+- Multi-tenancy.
+- Backup automático.
 
 ## 5. Personas y roles
 
-| Rol         | Descripción                         | Acciones permitidas                                                                                        |
-| ----------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **admin**   | Coordinador de Bunker4.             | CRUD alumnos, CRUD cursos/materias, CRUD docentes, asignar docentes a cursos, inscribir alumnos en cursos. |
-| **docente** | Responsable de uno o varios cursos. | Ver listado de alumnos de sus cursos, ver su propio perfil. NO puede crear alumnos ni cursos.              |
-| **alumno**  | persona cursando.                   | Ver su propio perfil, ver los cursos en los que está inscripto. No puede editar nada.                      |
+| Rol | Descripción | Acciones permitidas |
+|---|---|---|
+| **admin** | Coordinador de Bunker4. | Administra alumnos, cursos, materias y docentes; asigna docentes e inscribe alumnos. |
+| **docente** | Responsable de uno o varios cursos. | Consulta sus cursos, los alumnos de esos cursos y su perfil. No crea alumnos ni cursos. |
+| **alumno** | Persona cursando. | Consulta su perfil y los cursos donde está inscripto. No realiza modificaciones. |
 
-## 6. Entidades
+## 6. Reglas de negocio
 
-### 6.1 Alumno
+1. No se pueden crear dos alumnos con el mismo DNI ni el mismo email.
+2. Un alumno no puede tener más de una inscripción activa en el mismo curso.
+3. Un curso no puede superar su cupo de inscripciones activas.
+4. Al dar de baja a un alumno, sus inscripciones activas pasan a baja.
+5. Al dar de baja un curso, sus inscripciones activas pasan a baja y se
+   desasignan sus docentes.
+6. Un usuario alumno debe estar vinculado a un alumno; los usuarios admin y
+   docente no deben estar vinculados a un alumno.
+7. Toda alta o modificación debe registrar quién la realizó.
+8. Las bajas son lógicas: la aplicación no elimina registros de negocio.
 
-- `id` (int, PK)
-- `dni` (string, único, validado)
-- `nombre` (string)
-- `apellido` (string)
-- `email` (string, único, validado)
-- `telefono` (string, opcional)
-- `fecha_nacimiento` (date, opcional)
-- `usuario_github` (string, opcional) — username de GitHub
-- `usuario_gitlab` (string, opcional) — username de GitLab
-- `perfil_linkedin` (string, opcional) — URL del perfil de LinkedIn
-- `activo` (bool, default `true`) — soft delete
-- `created_at`, `updated_at`, `created_by`, `updated_by`
-
-### 6.2 Curso
-
-- `id` (int, PK)
-- `nombre` (string, único)
-- `descripcion` (string, opcional)
-- `cupos` (int, default 20)
-- `activo` (bool, default `true`)
-- `created_at`, `updated_at`, `created_by`, `updated_by`
-
-### 6.3 Materia
-
-> Nota de alcance: "materias" se modela como unidades dentro de un curso. En este alcance inicial se tratan como entidades simples asociadas a un curso.
-
-- `id` (int, PK)
-- `curso_id` (FK → Curso)
-- `nombre` (string)
-- `descripcion` (string, opcional)
-- `created_at`, `updated_at`
-
-### 6.4 Inscripción (relación alumno ↔ curso)
-
-- `id` (int, PK)
-- `alumno_id` (FK → Alumno)
-- `curso_id` (FK → Curso)
-- `fecha_inscripcion` (timestamp, default now)
-- `estado` (enum: `activa`, `baja`)
-- Unique constraint `(alumno_id, curso_id)` con validación de `estado=activa` única.
-
-### 6.5 Asignación docente (relación usuario ↔ curso)
-
-- `id` (int, PK)
-- `usuario_id` (FK → Usuario, rol docente)
-- `curso_id` (FK → Curso)
-- Unique constraint `(usuario_id, curso_id)`
-
-### 6.6 Usuario
-
-- `id` (int, PK)
-- `username` (string, único)
-- `email` (string, único)
-- `password_hash` (string)
-- `rol` (enum: `admin`, `docente`, `alumno`)
-- `alumno_id` (FK → Alumno, opcional, solo si rol=alumno)
-- `activo` (bool, default `true`)
-- `created_at`, `updated_at`, `created_by`
-
-## 7. Reglas de negocio
-
-1. No se puede crear dos alumnos con el mismo `dni` ni el mismo `email`.
-2. No se puede inscribir a un alumno ya `activo` en un curso en el que ya tiene `estado=activa`.
-3. La capacidad (`cupos`) del curso no se debe exceder con inscripciones `activa`. Validar antes de insertar y rechazar con 409.
-4. Al dar de baja un alumno (`activo=false`), todas sus inscripciones `activa` pasan a `estado=baja`.
-5. Al dar de baja un curso (`activo=false`), todas sus inscripciones `activa` pasan a `estado=baja` y se des-asignan los docentes.
-6. Un usuario con `rol=alumno` debe tener `alumno_id` no nulo. Un usuario con `rol=admin` o `rol=docente` debe tener `alumno_id` nulo.
-7. `created_by` = id del usuario que ejecutó el alta. `updated_by` = id del usuario que ejecutó la última modificación.
-8. El soft delete (`activo=false`) NO borra filas. Solo los procesos de mantenimiento de base (fuera del alcance de esta API) pueden hacer hard delete.
-
-## 8. Endpoints (alto nivel)
-
-### Autenticación
-
-- `POST /auth/login` → `{ access_token, token_type: "bearer" }`
-- `GET /auth/me` → usuario actual
-
-### Alumnos (admin)
-
-- `GET /alumnos` (con filtros: activo, búsqueda por dni/nombre; paginación)
-- `POST /alumnos`
-- `GET /alumnos/{id}`
-- `PATCH /alumnos/{id}`
-- `DELETE /alumnos/{id}` (soft delete: `activo=false`)
-
-### Cursos (admin)
-
-- `GET /cursos`
-- `POST /cursos`
-- `GET /cursos/{id}`
-- `PATCH /cursos/{id}`
-- `DELETE /cursos/{id}` (soft delete)
-
-### Materias (admin)
-
-- `GET /cursos/{curso_id}/materias`
-- `POST /cursos/{curso_id}/materias`
-- `PATCH /materias/{id}`
-- `DELETE /materias/{id}`
-
-### Inscripciones
-
-- `POST /cursos/{curso_id}/inscripciones` (body: `alumno_id`) — admin
-- `DELETE /cursos/{curso_id}/inscripciones/{alumno_id}` — admin (estado=baja)
-- `GET /cursos/{curso_id}/inscripciones` — admin + docente del curso
-
-### Asignación docente (admin)
-
-- `POST /cursos/{curso_id}/docentes` (body: `usuario_id`)
-- `DELETE /cursos/{curso_id}/docentes/{usuario_id}`
-
-### Vistas por rol
-
-- `GET /docente/me/cursos` (docente) → cursos del docente logueado + alumnos de cada uno
-- `GET /alumno/me/cursos` (alumno) → cursos con inscripción activa del alumno logueado
-
-## 9. Casos de uso clave
+## 7. Casos de uso clave
 
 ### UC-1: Alta de alumno
 
-**Actor:** admin
-**Flujo:**
+**Actor:** admin.
 
-1. Admin hace POST `/auth/login` con credenciales admin.
-2. Admin hace POST `/alumnos` con datos del alumno.
-3. Sistema valida dni y email únicos.
-4. Sistema crea alumno con `created_by` = id del admin.
-5. Sistema devuelve 201 con el alumno creado.
-
-**Errores:** 400 (validación), 409 (dni/email duplicado).
+1. El admin inicia sesión.
+2. Registra los datos del alumno.
+3. El sistema valida la unicidad de DNI y email.
+4. El sistema registra el alumno y la auditoría del alta.
+5. El sistema informa la creación o los errores de validación.
 
 ### UC-2: Inscripción con cupo lleno
 
-**Actor:** admin
-**Flujo:**
+**Actor:** admin.
 
-1. Admin hace POST `/cursos/{curso_id}/inscripciones`.
-2. Sistema verifica que la cantidad de inscripciones `activa` < `cupos`.
-3. Si alcanza el cupo, devuelve 409 con mensaje `cupos_completos`.
-4. Si hay cupo, crea inscripción con `estado=activa`.
+1. El admin intenta inscribir a un alumno en un curso.
+2. El sistema verifica que exista cupo disponible.
+3. Si el cupo está completo, rechaza la inscripción sin alterar los datos.
+4. Si hay cupo, crea una inscripción activa.
 
-**Errores:** 409 `cupos_completos`, 404 `curso_no_encontrado`
+### UC-3: Docente consulta sus cursos
 
-### UC-3: Docente ve sus cursos y alumnos
+**Actor:** docente.
 
-**Actor:** docente
-**Flujo:**
-
-1. Docente hace POST `/auth/login`.
-2. Docente hace GET `/docente/me/cursos`.
-3. Sistema filtra cursos donde `asignacion_docente.usuario_id` = su id.
-4. Para cada curso, incluye listado de alumnos con inscripción `activa`.
+1. El docente inicia sesión.
+2. Consulta los cursos que tiene asignados.
+3. El sistema muestra los alumnos con inscripción activa en esos cursos.
 
 ### UC-4: Alumno consulta sus cursos
 
-**Actor:** alumno
-**Flujo:**
+**Actor:** alumno.
 
-1. Alumno hace POST `/auth/login`.
-2. Alumno hace GET `/alumno/me/cursos`.
-3. Sistema filtra por su `alumno_id` y `estado=activa`.
+1. El alumno inicia sesión.
+2. Consulta sus cursos.
+3. El sistema muestra solo sus inscripciones activas.
 
-## 10. Requisitos no funcionales
-
-- **Autenticación**: JWT. `access_token` con expiración 60 minutos. Algoritmo HS256.
-- **Contraseñas**: bcrypt. Nunca se devuelve `password_hash`.
-- **Auditoría**: todas las mutations registran `created_by` / `updated_by`.
-- **Logging**: incluir `request_id` (UUID por request) en logs.
-- **Errores**: formato uniforme `{ "detail": "...", "code": "..." }`. Códigos estables para que el frontend pueda mapear.
-- **Versiónado**: API versionada con prefijo `/api/v1` (decisión final en PLAN.md).
-- **Internacionalización API**: mensajes de error en español neutro por defecto.
-- **DB**: UTF-8, timezone UTC en timestamps.
-- **Paginación**: listados con `limit` (default 20, max 100) y `offset`.
-
-## 11. Supuestos
-
-1. No existen alumnos menores sin email propio; el `email` es obligatorio para cada alumno.
-2. Cada alumno tiene un único `dni`.
-3. Un curso puede tener varios docentes asignados (relación many-to-many).
-4. No hay requisitos deconcurrencia alta; el scope es una sola sede de Bunker4.
-
-## 12. Riesgos
-
-| Riesgo                                                                    | Mitigación                                                                                     |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Conflicto de versiones entre SQLAlchemy 2.0 y snippets viejos de tutorial | Empezar con SQLAlchemy 2.0 sync style然后再 migrar a async; no copiar tutoriales de 1.4.       |
-| `asyncpg` vs `psycopg` para async DB                                      | Decisión final en PLAN.md; se elige `psycopg[binary]` con soporte async nativo en Python 3.12. |
-| Postgres local vs Docker                                                  | Se recomienda Docker; se documenta alternativa en README.                                      |
-| Hard delete accidental                                                    | Regla de negocio 8: soft delete únicamente.                                                    |
-
-## 13. Criterios de aceptación (primer slice)
+## 8. Criterios de aceptación del MVP
 
 1. Un admin puede crear, listar, modificar y dar de baja alumnos.
 2. Un admin puede crear cursos y materias dentro de cursos.
-3. Un admin puede inscribir alumnos en cursos respetando cupos.
-4. Un docente puede loguearse y ver sus cursos y alumnos.
-5. Un alumno puede loguearse y ver sus cursos activos.
-6. Todas las mutations registran `created_by` / `updated_by`.
-7. No se puede inscribir a un alumno en un curso lleno (409).
-8. Soft delete propaga baja a inscripciones (reglas 4 y 5).
-9. Endpoints de OpenAPI `/docs` funcionando.
-10. Test suite (cuando exista) pasa con al menos los casos de UC-1 a UC-4.
-
-## 14. Fuera de scope (explicito)
-
-- Calificaciones / notas.
-- Asistencia.
-- Reportes / dashboard.
-- Frontend.
-- Notificaciones por email.
-- Backup automático (es responsabilidad de ops con Docker postgres volumes).
+3. Un admin puede inscribir alumnos respetando los cupos.
+4. Un docente puede iniciar sesión y ver sus cursos y alumnos.
+5. Un alumno puede iniciar sesión y ver sus cursos activos.
+6. Todas las mutaciones registran la auditoría correspondiente.
+7. No se puede inscribir a un alumno en un curso lleno.
+8. Las bajas propagan los cambios requeridos a inscripciones y asignaciones.
+9. La interfaz y la API informan los errores de forma comprensible.
+10. La suite de pruebas cubre los casos de uso clave.
 
 ---
 
-**Próximo paso:** [PLAN.md](./PLAN.md) traduce este PRD en decisiones técnicas y plan de implementación.
+**Próximo paso:** [PLAN.md](./PLAN.md) define la arquitectura, el contrato
+técnico, las fases de implementación y la operación del sistema.

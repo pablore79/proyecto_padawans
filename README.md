@@ -36,6 +36,9 @@ proyecto_padawans/
 │   └── Dockerfile
 │
 ├── docker-compose.yml    # Orquesta backend + frontend + postgres
+├── build.sh              # Detiene el proyecto y construye imágenes Compose
+├── deploy.sh             # Construye y recrea los servicios Compose
+├── down.sh               # Detiene servicios sin borrar volúmenes
 ├── .env.example          # Variables de entorno ejemplo
 ├── PRD.md                # Requisitos del producto
 ├── PLAN.md               # Plan de implementación
@@ -86,11 +89,14 @@ cp .env.example .env
 # Editar .env con tus valores (SECRET_KEY, etc.)
 ```
 
-### 3. Levantar toda la stack con Docker Compose
+### 3. Construir y desplegar toda la stack con Docker Compose
 
 ```bash
-docker compose up -d --build
+./deploy.sh
 ```
+
+El script construye las imágenes y recrea los contenedores para aplicar los
+cambios. Puede ejecutarse desde la raíz o mediante una ruta absoluta.
 
 Esto levanta:
 - **PostgreSQL** en `localhost:5432`
@@ -113,6 +119,43 @@ docker compose exec backend python -m scripts.create_admin
 - **Frontend (UI)**: http://localhost:8080
 - **Backend API Docs**: http://localhost:8000/docs
 - **Adminer**: http://localhost:8081 (Server: `postgres`, User: `postgres`, Pass: `postgres`, DB: `bunker4_alumnos`)
+
+## Operación y despliegue
+
+### Requisitos
+
+- Docker Engine con Docker Compose v2.
+- Un archivo `.env` en la raíz, creado desde `.env.example`, con un `SECRET_KEY`
+  único para el entorno.
+- Puertos locales disponibles: `5432`, `8000`, `8080` y `8081`.
+
+### Scripts de la raíz
+
+| Acción | Comando | Efecto |
+|---|---|---|
+| Desplegar cambios | `./deploy.sh` | Construye y ejecuta `up -d --build --force-recreate`. |
+| Construir imágenes | `./build.sh` | Detiene el proyecto sin borrar volúmenes y construye backend y frontend. |
+| Construir un servicio | `./build.sh frontend` | Detiene el proyecto y construye solo el servicio indicado. |
+| Detener servicios | `./down.sh` | Ejecuta `docker compose down` sin propagar opciones para borrar volúmenes. |
+
+Los datos de PostgreSQL se conservan en el volumen nombrado `postgres_data`.
+No uses `docker compose down -v` salvo que exista un respaldo verificado y se
+haya autorizado explícitamente el borrado de datos.
+
+### Verificación posterior al despliegue
+
+```bash
+docker compose ps
+curl http://localhost:8000/health
+curl http://localhost:8080/health
+```
+
+Para reconstruir el backend antes de crear el primer administrador, ejecutá
+`./deploy.sh` y luego:
+
+```bash
+docker compose exec backend python -m scripts.create_admin
+```
 
 ## Desarrollo Local (Sin Docker para la App)
 
@@ -213,7 +256,7 @@ pytest --cov=app --cov-report=term-missing
 
 | Acción | Comando |
 |--------|---------|
-| Levantar todo | `docker compose up -d --build` |
+| Desplegar todo | `./deploy.sh` |
 | Levantar solo DB | `docker compose up -d postgres` |
 | Bajar todo | `docker compose down` |
 | Resetear DB (borra datos) | `docker compose down -v` |
