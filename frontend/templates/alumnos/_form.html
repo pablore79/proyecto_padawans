@@ -50,19 +50,19 @@
                 <div class="form-group">
                     <label for="usuario_github">GitHub</label>
                     <input type="text" id="usuario_github" name="usuario_github" maxlength="100" 
-                           value="{{ alumno.usuario_github if alumno else '' }}" placeholder="usuario">
+                           value="{{ alumno.usuario_github if alumno and alumno.usuario_github else '' }}" placeholder="usuario">
                 </div>
                 <div class="form-group">
                     <label for="usuario_gitlab">GitLab</label>
                     <input type="text" id="usuario_gitlab" name="usuario_gitlab" maxlength="100" 
-                           value="{{ alumno.usuario_gitlab if alumno else '' }}" placeholder="usuario">
+                           value="{{ alumno.usuario_gitlab if alumno and alumno.usuario_gitlab else '' }}" placeholder="usuario">
                 </div>
             </div>
             
             <div class="form-group">
                 <label for="perfil_linkedin">LinkedIn</label>
                 <input type="url" id="perfil_linkedin" name="perfil_linkedin" maxlength="255" 
-                       value="{{ alumno.perfil_linkedin if alumno else '' }}" placeholder="https://linkedin.com/in/usuario">
+                       value="{{ alumno.perfil_linkedin if alumno and alumno.perfil_linkedin else '' }}" placeholder="https://linkedin.com/in/usuario">
             </div>
             
             {% if alumno %}
