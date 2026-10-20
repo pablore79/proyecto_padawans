@@ -95,8 +95,15 @@
                     form.closest('.modal-overlay')?.remove();
                     
                     showFlash('{% if curso %}Curso actualizado correctamente{% else %}Curso creado correctamente{% endif %}', 'success');
+                    
+                    // Use htmx.ajax for reliable list refresh
                     const tableBody = document.getElementById('cursos-table-body');
-                    if (tableBody) htmx.trigger(tableBody, 'load');
+                    if (tableBody) {
+                        htmx.ajax('GET', '/cursos/list', {
+                            target: '#cursos-table-body',
+                            swap: 'innerHTML'
+                        });
+                    }
                     return;
                 }
 

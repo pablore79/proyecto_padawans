@@ -139,8 +139,15 @@
                     restoreButton = false;
                     form.closest('.modal-overlay')?.remove();
                     showFlash('{% if alumno %}Alumno actualizado correctamente{% else %}Alumno creado correctamente{% endif %}', 'success');
+                    
+                    // Use htmx.ajax for reliable list refresh
                     const tableBody = document.getElementById('alumnos-table-body');
-                    if (tableBody) htmx.trigger(tableBody, 'load');
+                    if (tableBody) {
+                        htmx.ajax('GET', '/alumnos/list', {
+                            target: '#alumnos-table-body',
+                            swap: 'innerHTML'
+                        });
+                    }
                     return;
                 }
 
