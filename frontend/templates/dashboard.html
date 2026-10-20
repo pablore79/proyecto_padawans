@@ -13,35 +13,35 @@
         <div class="dashboard-card" x-show="$store.auth.userRole === 'admin'">
             <div class="card-icon">👥</div>
             <h3>Alumnos</h3>
-            <p class="card-count" id="alumnos-count">Cargando...</p>
+            <p class="card-count" id="alumnos-count"></p>
             <a href="/alumnos" class="btn btn-secondary btn-sm" hx-boost="true">Ver todos</a>
         </div>
 
         <div class="dashboard-card" x-show="$store.auth.userRole === 'admin'">
             <div class="card-icon">📚</div>
             <h3>Cursos</h3>
-            <p class="card-count" id="cursos-count">Cargando...</p>
+            <p class="card-count" id="cursos-count"></p>
             <a href="/cursos" class="btn btn-secondary btn-sm" hx-boost="true">Ver todos</a>
         </div>
 
         <div class="dashboard-card" x-show="$store.auth.userRole === 'admin' || $store.auth.userRole === 'docente'">
             <div class="card-icon">📝</div>
             <h3>Inscripciones</h3>
-            <p class="card-count" id="inscripciones-count">Cargando...</p>
+            <p class="card-count" id="inscripciones-count"></p>
             <a href="/cursos" class="btn btn-secondary btn-sm" hx-boost="true">Gestionar</a>
         </div>
 
         <div class="dashboard-card" x-show="$store.auth.userRole === 'alumno'">
             <div class="card-icon">🎓</div>
             <h3>Mis Cursos</h3>
-            <p class="card-count" id="mis-cursos-count">Cargando...</p>
+            <p class="card-count" id="mis-cursos-count"></p>
             <a href="#" hx-get="/api/v1/alumno/me/cursos" hx-target="#mis-cursos-modal" hx-swap="innerHTML" class="btn btn-secondary btn-sm">Ver</a>
         </div>
 
         <div class="dashboard-card" x-show="$store.auth.userRole === 'docente'">
             <div class="card-icon">👨‍🏫</div>
             <h3>Mis Cursos (Docente)</h3>
-            <p class="card-count" id="docente-cursos-count">Cargando...</p>
+            <p class="card-count" id="docente-cursos-count"></p>
             <a href="#" hx-get="/api/v1/docente/me/cursos" hx-target="#docente-cursos-modal" hx-swap="innerHTML" class="btn btn-secondary btn-sm">Ver</a>
         </div>
     </div>
@@ -68,23 +68,31 @@
                 const [alumnos, cursos, inscripciones] = await Promise.all([
                     fetch('/api/v1/alumnos?limit=1', { headers: authHeaders() }).then(r => r.json()),
                     fetch('/api/v1/cursos?limit=1', { headers: authHeaders() }).then(r => r.json()),
-                    fetch('/api/v1/cursos/1/inscripciones?limit=1', { headers: authHeaders() }).catch(() => ({ total: 0 })).then(r => r.json())
+                    fetch('/api/v1/inscripciones?limit=1', { headers: authHeaders() }).then(r => r.json())
                 ]);
-                document.getElementById('alumnos-count').textContent = alumnos.total || 0;
-                document.getElementById('cursos-count').textContent = cursos.total || 0;
-                document.getElementById('inscripciones-count').textContent = inscripciones.total || 0;
+                document.getElementById('alumnos-count').textContent = formatCount(alumnos.total, 'alumno');
+                document.getElementById('cursos-count').textContent = formatCount(cursos.total, 'curso');
+                document.getElementById('inscripciones-count').textContent = formatCount(inscripciones.total, 'inscripción');
             } else if ($store.auth.userRole === 'alumno') {
                 const res = await fetch('/api/v1/alumno/me/cursos', { headers: authHeaders() });
                 const data = await res.json();
-                document.getElementById('mis-cursos-count').textContent = data.cursos?.length || 0;
+                const count = data.cursos?.length || 0;
+                document.getElementById('mis-cursos-count').textContent = formatCount(count, 'curso');
             } else if ($store.auth.userRole === 'docente') {
                 const res = await fetch('/api/v1/docente/me/cursos', { headers: authHeaders() });
                 const data = await res.json();
-                document.getElementById('docente-cursos-count').textContent = data.cursos?.length || 0;
+                const count = data.cursos?.length || 0;
+                document.getElementById('docente-cursos-count').textContent = formatCount(count, 'curso');
             }
         } catch (e) {
             console.error('Error loading dashboard stats', e);
         }
+    }
+
+    function formatCount(count, singular) {
+        if (count === 0) return '';
+        const plural = singular === 'inscripción' ? 'inscripciones' : singular + 's';
+        return `${count} ${count === 1 ? singular : plural}`;
     }
 
     function authHeaders() {
