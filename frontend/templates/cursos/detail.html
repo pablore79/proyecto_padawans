@@ -10,7 +10,16 @@
                 <h2>{{ curso.nombre }}</h2>
                 <p class="text-muted">{{ curso.descripcion or 'Sin descripción' }}</p>
             </div>
-            <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="/dashboard" class="btn btn-secondary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5"></path>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Volver al menú principal
+                </a>
+                <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
+            </div>
         </div>
         
         <div class="modal-tabs">
@@ -28,8 +37,8 @@
                     <dt>Inscriptos</dt><dd>{{ curso.inscriptos_count }}</dt>
                     <dt>Disponibles</dt><dd>{{ curso.cupos - curso.inscriptos_count }}</dt>
                     <dt>Estado</dt><dd><span class="badge {% if curso.activo %}badge-success{% else %}badge-danger{% endif %}">{% if curso.activo %}Activo{% else %}Inactivo{% endif %}</span></dt>
-                    <dt>Creado</dt><dd>{{ curso.created_at.strftime('%d/%m/%Y %H:%M') if curso.created_at else '-' }}</dt>
-                    <dt>Actualizado</dt><dd>{{ curso.updated_at.strftime('%d/%m/%Y %H:%M') if curso.updated_at else '-' }}</dt>
+                    <dt>Creado</dt><dd>{{ curso.created_at[:16].replace('T', ' ') if curso.created_at else '-' }}</dt>
+                    <dt>Actualizado</dt><dd>{{ curso.updated_at[:16].replace('T', ' ') if curso.updated_at else '-' }}</dt>
                 </dl>
             </div>
             
