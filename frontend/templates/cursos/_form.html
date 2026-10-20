@@ -4,30 +4,26 @@
             <h2>{% if curso %}Editar Curso{% else %}Nuevo Curso{% endif %}</h2>
             <button class="btn btn-ghost btn-sm" @click="open = false; setTimeout(() => $el.remove(), 150)">&times;</button>
         </div>
-        <form hx-post="{% if curso %}/api/v1/cursos/{{ curso.id }}{% else %}/api/v1/cursos{% endif %}" 
-              hx-target="#modal-container" hx-swap="outerHTML"
-              class="form">
-            <input type="hidden" name="_method" value="{% if curso %}PATCH{% else %}POST{% endif %}">
-            
+        <form id="curso-form" class="form">
             <div class="form-group">
                 <label for="nombre">Nombre *</label>
-                <input type="text" id="nombre" name="nombre" required maxlength="100" 
+                <input type="text" id="nombre" name="nombre" required maxlength="100"
                        value="{{ curso.nombre if curso else '' }}">
             </div>
-            
+
             <div class="form-group">
                 <label for="descripcion">Descripción</label>
                 <textarea id="descripcion" name="descripcion" maxlength="500" rows="3">{{ curso.descripcion if curso else '' }}</textarea>
             </div>
-            
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="cupos">Cupos *</label>
-                    <input type="number" id="cupos" name="cupos" required min="1" max="500" 
+                    <input type="number" id="cupos" name="cupos" required min="1" max="500"
                            value="{{ curso.cupos if curso else 20 }}">
                 </div>
             </div>
-            
+
             {% if curso %}
             <div class="form-group">
                 <label class="checkbox-label">
@@ -36,20 +32,95 @@
                 </label>
             </div>
             {% endif %}
-            
+
             <div class="form-actions">
                 <button type="button" class="btn btn-secondary" @click="open = false; setTimeout(() => $el.remove(), 150)">Cancelar</button>
-                <button type="submit" class="btn btn-primary">{% if curso %}Guardar cambios{% else %}Crear curso{% endif %}</button>
+                <button type="submit" class="btn btn-primary" id="curso-submit">{% if curso %}Guardar cambios{% else %}Crear curso{% endif %}</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    document.addEventListener('htmx:afterRequest', (evt) => {
-        if (evt.detail.successful && evt.detail.target.id === 'modal-container') {
-            document.getElementById('cursos-table-body')?.dispatchEvent(new Event('load'));
-            showFlash('{% if curso %}Curso actualizado correctamente{% else %}Curso creado correctamente{% endif %}', 'success');
-        }
-    });
+    (() => {
+        const form = document.getElementById('curso-form');
+        const submitButton = document.getElementById('curso-submit');
+        const endpoint = '{% if curso %}/api/v1/cursos/{{ curso.id }}{% else %}/api/v1/cursos{% endif %}';
+        const method = '{% if curso %}PATCH{% else %}POST{% endif %}';
+        const isEditing = {{ 'true' if curso else 'false' }};
+
+        const optionalValue = (fieldName) => {
+            const value = form.elements[fieldName].value.trim();
+            return value === '' ? null : value;
+        };
+
+        const safeFlash = (message, type = 'error') => {
+            const text = document.createElement('span');
+            text.textContent = message;
+            showFlash(text.innerHTML, type);
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (submitButton.disabled) return;
+
+            submitButton.disabled = true;
+            let restoreButton = true;
+
+            const payload = {
+                nombre: form.elements.nombre.value.trim(),
+                descripcion: optionalValue('descripcion'),
+                cupos: parseInt(form.elements.cupos.value, 10)
+            };
+
+            if (isEditing) {
+                payload.activo = form.elements.activo.checked;
+            }
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(endpoint, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 200 || response.status === 201) {
+                    restoreButton = false;
+                    form.closest('.modal-overlay')?.remove();
+                    showFlash('{% if curso %}Curso actualizado correctamente{% else %}Curso creado correctamente{% endif %}', 'success');
+                    const tableBody = document.getElementById('cursos-table-body');
+                    if (tableBody) htmx.trigger(tableBody, 'load');
+                    return;
+                }
+
+                if (response.status === 401 || response.status === 403) {
+                    restoreButton = false;
+                    localStorage.removeItem('auth_token');
+                    if (window.Alpine?.store('auth')) Alpine.store('auth').clearToken();
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const errorData = await response.json().catch(() => null);
+                if (response.status === 409) {
+                    const duplicateMessage = typeof errorData?.detail === 'string'
+                        ? errorData.detail
+                        : 'Ya existe un curso con esos datos.';
+                    safeFlash(duplicateMessage);
+                } else if (response.status === 422) {
+                    showFlash('Revisá los datos ingresados e intentá nuevamente.', 'error');
+                } else {
+                    showFlash('No se pudo guardar el curso. Intentá nuevamente.', 'error');
+                }
+            } catch (error) {
+                showFlash('No se pudo conectar con el servidor.', 'error');
+            } finally {
+                if (restoreButton) submitButton.disabled = false;
+            }
+        });
+    })();
 </script>
