@@ -42,7 +42,7 @@
                 <div class="form-group">
                     <label for="fecha_nacimiento">Fecha de nacimiento</label>
                     <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" 
-                           value="{{ alumno.fecha_nacimiento.strftime('%Y-%m-%d') if alumno and alumno.fecha_nacimiento else '' }}">
+                           value="{{ alumno.fecha_nacimiento if alumno and alumno.fecha_nacimiento else '' }}">
                 </div>
             </div>
             
