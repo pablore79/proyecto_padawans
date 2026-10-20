@@ -81,14 +81,13 @@ async def proxy_api(
     token: str = Depends(get_token),
 ) -> Response:
     """Proxy all API requests to backend."""
-    # Build headers
-    headers = {
-        key: value
-        for key, value in request.headers.items()
-        if key.lower() not in {"host", "authorization"}
-    }
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    # Build headers - preserve incoming Authorization header if present
+    incoming_auth = request.headers.get("authorization")
+    headers = {key: value for key, value in request.headers.items() if key.lower() not in {"host"}}
+    # Use token from get_token (set by get_current_user) OR incoming Authorization header
+    auth_token = token or (incoming_auth.removeprefix("Bearer ").strip() if incoming_auth else None)
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
 
     # Get query params
     params = dict(request.query_params)
