@@ -90,10 +90,21 @@
 
                 if (response.status === 200 || response.status === 201) {
                     restoreButton = false;
-                    form.closest('.modal-overlay')?.remove();
                     showFlash('{% if curso %}Curso actualizado correctamente{% else %}Curso creado correctamente{% endif %}', 'success');
                     const tableBody = document.getElementById('cursos-table-body');
                     if (tableBody) htmx.trigger(tableBody, 'load');
+                    
+                    // Properly close the modal via Alpine.js
+                    const modalOverlay = form.closest('.modal-overlay');
+                    if (modalOverlay) {
+                        const alpineData = modalOverlay.__x || (window.Alpine && Alpine.$data(modalOverlay));
+                        if (alpineData && typeof alpineData.open !== 'undefined') {
+                            alpineData.open = false;
+                            setTimeout(() => modalOverlay.remove(), 150);
+                        } else {
+                            modalOverlay.remove();
+                        }
+                    }
                     return;
                 }
 
