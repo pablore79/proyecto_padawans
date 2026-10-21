@@ -156,6 +156,7 @@ class InscripcionRepository:
                 "alumno_nombre": inscripcion.alumno.nombre if inscripcion.alumno else None,
                 "alumno_apellido": inscripcion.alumno.apellido if inscripcion.alumno else None,
                 "alumno_dni": inscripcion.alumno.dni if inscripcion.alumno else None,
+                "alumno_email": inscripcion.alumno.email if inscripcion.alumno else None,
                 "curso_nombre": inscripcion.curso.nombre if inscripcion.curso else None,
             }
         return None
@@ -200,6 +201,7 @@ class InscripcionRepository:
                 "alumno_nombre": i.alumno.nombre if i.alumno else None,
                 "alumno_apellido": i.alumno.apellido if i.alumno else None,
                 "alumno_dni": i.alumno.dni if i.alumno else None,
+                "alumno_email": i.alumno.email if i.alumno else None,
                 "curso_nombre": i.curso.nombre if i.curso else None,
             }
             for i in inscripciones

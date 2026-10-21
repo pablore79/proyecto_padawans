@@ -21,6 +21,7 @@ class InscripcionRead(InscripcionBase):
     alumno_nombre: str | None = None
     alumno_apellido: str | None = None
     alumno_dni: str | None = None
+    alumno_email: str | None = None
     curso_nombre: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
