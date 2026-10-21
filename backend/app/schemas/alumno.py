@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class AlumnoBase(BaseModel):
@@ -48,3 +48,10 @@ class AlumnoListParams(BaseModel):
     search: str | None = Field(None, description="Búsqueda por DNI, nombre o apellido")
     limit: int = Field(default=20, ge=1, le=100)
     offset: int = Field(default=0, ge=0)
+
+    @field_validator('activo', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v == '':
+            return None
+        return v

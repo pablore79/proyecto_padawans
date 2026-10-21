@@ -13,15 +13,20 @@ router = APIRouter(prefix="/cursos", tags=["Cursos"])
 
 @router.get("", response_model=PaginatedResponse[CursoRead])
 async def list_cursos(
-    activo: bool | None = Query(None, description="Filtrar por estado activo"),
+    activo: str | None = Query(None, description="Filtrar por estado activo"),
     search: str | None = Query(None, description="Buscar por nombre o descripción"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[CursoRead]:
+    # Convert empty string to None for boolean filter
+    activo_bool: bool | None = None
+    if activo is not None and activo != '':
+        activo_bool = activo.lower() == 'true'
+    
     service = CursoService(db)
-    return await service.list(activo=activo, search=search, limit=limit, offset=offset)
+    return await service.list(activo=activo_bool, search=search, limit=limit, offset=offset)
 
 
 @router.post("", response_model=CursoRead, status_code=201)

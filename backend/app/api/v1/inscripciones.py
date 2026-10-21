@@ -65,8 +65,13 @@ async def list_inscripciones(
                 "No tiene permisos para ver inscripciones de este curso", "sin_permisos"
             )
 
+    # Convert empty string to None for enum filter
+    estado_enum = None
+    if estado is not None and estado != '':
+        estado_enum = EstadoInscripcion(estado)
+    
     params = InscripcionListParams(
-        estado=EstadoInscripcion(estado) if estado else None,
+        estado=estado_enum,
         search=search,
         limit=limit,
         offset=offset,

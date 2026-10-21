@@ -13,15 +13,20 @@ router = APIRouter(prefix="/alumnos", tags=["Alumnos"])
 
 @router.get("", response_model=PaginatedResponse[AlumnoRead])
 async def list_alumnos(
-    activo: bool | None = Query(None, description="Filtrar por estado activo"),
+    activo: str | None = Query(None, description="Filtrar por estado activo"),
     search: str | None = Query(None, description="Buscar por DNI, nombre o apellido"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[AlumnoRead]:
+    # Convert empty string to None for boolean filter
+    activo_bool: bool | None = None
+    if activo is not None and activo != '':
+        activo_bool = activo.lower() == 'true'
+    
     service = AlumnoService(db)
-    params = AlumnoListParams(activo=activo, search=search, limit=limit, offset=offset)
+    params = AlumnoListParams(activo=activo_bool, search=search, limit=limit, offset=offset)
     return await service.list(params)
 
 
