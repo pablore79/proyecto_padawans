@@ -28,7 +28,7 @@
                hx-get="/cursos/list" hx-trigger="keyup changed delay:300ms, search" 
                hx-target="#cursos-table-body" hx-include="#activo-filter" hx-indicator="#search-spinner">
         <span class="htmx-indicator" id="search-spinner">⏳</span>
-        <select id="activo-filter" hx-get="/cursos/list" hx-trigger="change" hx-target="#cursos-table-body" hx-include="#search-input">
+        <select id="activo-filter" name="activo" hx-get="/cursos/list" hx-trigger="change" hx-target="#cursos-table-body" hx-include="#search-input">
             <option value="">Todos</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>

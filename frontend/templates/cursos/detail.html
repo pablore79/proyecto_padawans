@@ -49,7 +49,7 @@
                                hx-get="/cursos/{{ curso.id }}/inscripciones/list" hx-trigger="keyup changed delay:300ms, search" 
                                hx-target="#inscripciones-table-body" hx-include="#inscripciones-estado-filter" hx-indicator="#inscripciones-search-spinner">
                         <span class="htmx-indicator" id="inscripciones-search-spinner">⏳</span>
-                        <select id="inscripciones-estado-filter" hx-get="/cursos/{{ curso.id }}/inscripciones/list" hx-trigger="change" hx-target="#inscripciones-table-body" hx-include="#inscripciones-search">
+                        <select id="inscripciones-estado-filter" name="estado" hx-get="/cursos/{{ curso.id }}/inscripciones/list" hx-trigger="change" hx-target="#inscripciones-table-body" hx-include="#inscripciones-search">
                             <option value="">Todos</option>
                             <option value="activa">Activas</option>
                             <option value="baja">Bajas</option>
