@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.asignacion_docente import AsignacionDocente
+from app.models.alumno import Alumno
 from app.models.inscripcion import EstadoInscripcion, Inscripcion
 
 
@@ -66,10 +67,21 @@ class InscripcionRepository:
         self,
         curso_id: int,
         estado: EstadoInscripcion | None = None,
+        search: str | None = None,
     ) -> int:
+        from sqlalchemy import or_
         query = select(func.count(Inscripcion.id)).where(Inscripcion.curso_id == curso_id)
         if estado:
             query = query.where(Inscripcion.estado == estado)
+        if search:
+            search_term = f"%{search}%"
+            query = query.join(Inscripcion.alumno).where(
+                or_(
+                    Alumno.nombre.ilike(search_term),
+                    Alumno.apellido.ilike(search_term),
+                    Alumno.dni.ilike(search_term),
+                )
+            )
         result = await self.db.execute(query)
         return result.scalar_one()
 
@@ -152,10 +164,12 @@ class InscripcionRepository:
         self,
         curso_id: int,
         estado: EstadoInscripcion | None = None,
+        search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> list[dict[str, str | int | datetime | EstadoInscripcion | None]]:
         from sqlalchemy.orm import joinedload
+        from sqlalchemy import or_
 
         query = (
             select(Inscripcion)
@@ -164,6 +178,15 @@ class InscripcionRepository:
         )
         if estado:
             query = query.where(Inscripcion.estado == estado)
+        if search:
+            search_term = f"%{search}%"
+            query = query.join(Inscripcion.alumno).where(
+                or_(
+                    Inscripcion.alumno.has(Alumno.nombre.ilike(search_term)),
+                    Inscripcion.alumno.has(Alumno.apellido.ilike(search_term)),
+                    Inscripcion.alumno.has(Alumno.dni.ilike(search_term)),
+                )
+            )
         query = query.order_by(Inscripcion.fecha_inscripcion.desc()).limit(limit).offset(offset)
         result = await self.db.execute(query)
         inscripciones = result.unique().scalars().all()

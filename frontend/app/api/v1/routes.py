@@ -299,6 +299,42 @@ async def curso_detail(
     return templates.TemplateResponse("cursos/detail.html", context)
 
 
+@router.get(
+    "/cursos/{curso_id}/inscripciones/list",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def inscripciones_list_partial(
+    request: Request,
+    curso_id: int,
+    user: dict[str, Any] = Depends(require_role("admin")),
+    backend_client: httpx.AsyncClient = Depends(get_backend_client),
+    token: str | None = Depends(get_token),
+) -> Response:
+    """Render the inscripcion rows returned by the backend for HTMX requests."""
+    if token is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    try:
+        response = await backend_client.get(
+            f"/api/v1/cursos/{curso_id}/inscripciones",
+            headers={"Authorization": f"Bearer {token}"},
+            params=dict(request.query_params),
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail="Error comunicándose con el backend") from e
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail="Backend no disponible") from e
+
+    payload = response.json()
+    inscripciones = payload.get("items", []) if isinstance(payload, dict) else []
+    return templates.TemplateResponse(
+        "cursos/_inscripcion_row.html",
+        {"request": request, "inscripciones": inscripciones, "curso_id": curso_id},
+    )
+
+
 # Docente pages
 @router.get("/docente/me/cursos", response_class=HTMLResponse, include_in_schema=False)
 async def docente_mis_cursos(

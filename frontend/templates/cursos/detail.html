@@ -44,6 +44,17 @@
             
             <div x-show="activeTab === 'inscripciones'" x-transition>
                 <div class="toolbar">
+                    <div class="search-bar" style="flex: 1;">
+                        <input type="search" id="inscripciones-search" placeholder="Buscar por nombre, apellido o DNI..." 
+                               hx-get="/cursos/{{ curso.id }}/inscripciones/list" hx-trigger="keyup changed delay:300ms, search" 
+                               hx-target="#inscripciones-table-body" hx-include="#inscripciones-estado-filter" hx-indicator="#inscripciones-search-spinner">
+                        <span class="htmx-indicator" id="inscripciones-search-spinner">⏳</span>
+                        <select id="inscripciones-estado-filter" hx-get="/cursos/{{ curso.id }}/inscripciones/list" hx-trigger="change" hx-target="#inscripciones-table-body" hx-include="#inscripciones-search">
+                            <option value="">Todos</option>
+                            <option value="activa">Activas</option>
+                            <option value="baja">Bajas</option>
+                        </select>
+                    </div>
                     <button class="btn btn-primary" hx-get="/cursos/{{ curso.id }}/inscribir" hx-target="#modal-container" hx-swap="innerHTML">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>

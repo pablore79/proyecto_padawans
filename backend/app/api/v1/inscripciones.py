@@ -35,6 +35,7 @@ async def create_inscripcion(
 async def list_inscripciones(
     curso_id: int,
     estado: str | None = Query(None, description="Filtrar por estado (activa, baja)"),
+    search: str | None = Query(None, description="Buscar por nombre, apellido o DNI del alumno"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(require_admin_or_docente),
@@ -66,6 +67,7 @@ async def list_inscripciones(
 
     params = InscripcionListParams(
         estado=EstadoInscripcion(estado) if estado else None,
+        search=search,
         limit=limit,
         offset=offset,
     )

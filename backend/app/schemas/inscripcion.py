@@ -36,5 +36,6 @@ class InscripcionEstadoUpdate(BaseModel):
 
 class InscripcionListParams(BaseModel):
     estado: EstadoInscripcion | None = None
+    search: str | None = None
     limit: int = Field(default=20, ge=1, le=100)
     offset: int = Field(default=0, ge=0)

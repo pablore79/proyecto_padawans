@@ -79,10 +79,11 @@ class InscripcionService:
         inscripciones = await self.inscripcion_repo.list_by_curso_with_details(
             curso_id=curso_id,
             estado=params.estado,
+            search=params.search,
             limit=params.limit,
             offset=params.offset,
         )
-        total = await self.inscripcion_repo.count_by_curso(curso_id, estado=params.estado)
+        total = await self.inscripcion_repo.count_by_curso(curso_id, estado=params.estado, search=params.search)
         items = [InscripcionRead.model_validate(i) for i in inscripciones]
         return PaginatedResponse(items=items, total=total, limit=params.limit, offset=params.offset)
 
