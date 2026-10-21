@@ -45,7 +45,7 @@
             <div x-show="activeTab === 'inscripciones'" x-transition>
                 <div class="toolbar">
                     <div class="search-bar" style="flex: 1;">
-                        <input type="search" id="inscripciones-search" placeholder="Buscar por nombre, apellido o DNI..." 
+                        <input type="search" id="inscripciones-search" name="search" placeholder="Buscar por nombre, apellido o DNI..." 
                                hx-get="/cursos/{{ curso.id }}/inscripciones/list" hx-trigger="keyup changed delay:300ms, search" 
                                hx-target="#inscripciones-table-body" hx-include="#inscripciones-estado-filter" hx-indicator="#inscripciones-search-spinner">
                         <span class="htmx-indicator" id="inscripciones-search-spinner">⏳</span>

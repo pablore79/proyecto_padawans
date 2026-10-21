@@ -24,7 +24,7 @@
         </div>
     </div>
     <div class="search-bar">
-        <input type="search" id="search-input" placeholder="Buscar por nombre o descripción..." 
+        <input type="search" id="search-input" name="search" placeholder="Buscar por nombre o descripción..." 
                hx-get="/cursos/list" hx-trigger="keyup changed delay:300ms, search" 
                hx-target="#cursos-table-body" hx-include="#activo-filter" hx-indicator="#search-spinner">
         <span class="htmx-indicator" id="search-spinner">⏳</span>

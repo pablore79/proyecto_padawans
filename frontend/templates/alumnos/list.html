@@ -24,7 +24,7 @@
         </div>
     </div>
     <div class="search-bar">
-        <input type="search" id="search-input" placeholder="Buscar por DNI, nombre o apellido..." 
+        <input type="search" id="search-input" name="search" placeholder="Buscar por DNI, nombre o apellido..." 
                hx-get="/alumnos/list" hx-trigger="keyup changed delay:300ms, search" 
                hx-target="#alumnos-table-body" hx-include="#activo-filter" hx-indicator="#search-spinner">
         <span class="htmx-indicator" id="search-spinner">⏳</span>
