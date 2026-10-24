@@ -18,7 +18,7 @@ spec:
       containers:
         - name: frontend
           # Construir y subir al registry de microk8s (ver manifests/README.md)
-          image: localhost:32000/bunker4-frontend:latest
+          image: harbor.perfeccion.ar/tanque/proyecto_padawans-frontend:0.1           
           imagePullPolicy: Always
           ports:
             - name: http
