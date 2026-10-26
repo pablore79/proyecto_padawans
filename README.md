@@ -122,6 +122,43 @@ docker compose exec backend python -m scripts.create_admin
 
 ## Operación y despliegue
 
+## Kubernetes
+
+Los manifiestos de Kubernetes usan el namespace `bunker4`. Antes de aplicar el
+backend, creá el Secret `bunker4-env` a partir del archivo `.env` local. De este
+modo, las credenciales no quedan escritas en un manifiesto versionado.
+
+Desde la raíz del repositorio:
+
+```bash
+kubectl create secret generic bunker4-env \
+  --namespace bunker4 \
+  --from-env-file=.env
+
+kubectl apply -f manifests/backend.yaml
+```
+
+Si el Secret ya existe y necesitás actualizarlo con el contenido actual de
+`.env`, generá su definición localmente y aplicala:
+
+```bash
+kubectl create secret generic bunker4-env \
+  --namespace bunker4 \
+  --from-env-file=.env \
+  --dry-run=client \
+  --output=yaml | kubectl apply -f -
+```
+
+Verificá la creación del Secret y el inicio del Pod:
+
+```bash
+kubectl get secret bunker4-env -n bunker4
+kubectl get pods -n bunker4 -w
+```
+
+> No versionar `.env` ni la salida de estos comandos: los valores de un Secret
+> codificados en Base64 no están cifrados.
+
 ### Requisitos
 
 - Docker Engine con Docker Compose v2.
