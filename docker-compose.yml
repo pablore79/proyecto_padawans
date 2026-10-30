@@ -3,9 +3,10 @@ services:
     image: postgres:16-alpine
     container_name: bunker4_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bunker4_alumnos
+      # POSTGRES_USER: postgres
+      # POSTGRES_PASSWORD: postgres
+      # POSTGRES_DB: bunker4_alumnos
+      DATABASE_URL: ${DATABASE_URL} 
     ports:
       - "5432:5432"
     volumes:
