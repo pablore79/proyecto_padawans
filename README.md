@@ -118,11 +118,48 @@ docker compose exec backend python -m scripts.create_admin
 
 ### 5. Acceder a la aplicación
 
-- **Frontend (UI)**: http://localhost:8080
-- **Backend API Docs**: http://localhost:8000/docs
-- **Adminer**: http://localhost:8081 (Server: `postgres`, User: `postgres`, Pass: `postgres`, DB: `bunker4_alumnos`)
+- **Frontend (UI)**: <http://localhost:8080>
+- **Backend API Docs**: <http://localhost:8000/docs>
+- **Adminer**: <http://localhost:8081> (Server: `postgres`, User: `postgres`, Pass: `postgres`, DB: `bunker4_alumnos`)
 
 ## Operación y despliegue
+
+## Kubernetes
+
+Los manifiestos de Kubernetes usan el namespace `bunker4`. Antes de aplicar el
+backend, creá el Secret `bunker4-env` a partir del archivo `.env` local. De este
+modo, las credenciales no quedan escritas en un manifiesto versionado.
+
+Desde la raíz del repositorio:
+
+```bash
+kubectl create secret generic bunker4-env \
+  --namespace bunker4 \
+  --from-env-file=.env
+
+kubectl apply -f manifests/backend.yaml
+```
+
+Si el Secret ya existe y necesitás actualizarlo con el contenido actual de
+`.env`, generá su definición localmente y aplicala:
+
+```bash
+kubectl create secret generic bunker4-env \
+  --namespace bunker4 \
+  --from-env-file=.env \
+  --dry-run=client \
+  --output=yaml | kubectl apply -f -
+```
+
+Verificá la creación del Secret y el inicio del Pod:
+
+```bash
+kubectl get secret bunker4-env -n bunker4
+kubectl get pods -n bunker4 -w
+```
+
+> No versionar `.env` ni la salida de estos comandos: los valores de un Secret
+> codificados en Base64 no están cifrados.
 
 ### Requisitos
 
@@ -320,7 +357,18 @@ Esto permite:
 - Frontend independiente, escalable por separado
 - Migración futura a SPA (React/Vue) sin tocar backend
 
-Línea cualquiera.
+=======
+
+## Kubernetes secrets
+
+Pasos realizados
+
+```shell
+kubectl get secrets -n bunker4
+kubectl delete secret bunker4-env -n bunker4
+kubectl -n bunker4 create secret generic bunker4-env --from-env-file=.env --dry-run=client -o yaml
+kubectl -n bunker4 create secret generic bunker4-env --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+```
 
 ## Licencia
 
