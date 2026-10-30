@@ -55,6 +55,7 @@ proyecto_padawans/
 ## Estado Actual
 
 **MVP implementado y funcional** — Monorepo con arquitectura preparada para microservicios:
+
 - ✅ Backend API REST completa (alumnos, cursos, materias, inscripciones, docentes, auth)
 - ✅ Frontend BFF con templates Jinja2 + HTMX (proxy transparente a backend API)
 - ✅ 182 tests pasando (unit + integración) en backend
@@ -99,6 +100,7 @@ El script construye las imágenes y recrea los contenedores para aplicar los
 cambios. Puede ejecutarse desde la raíz o mediante una ruta absoluta.
 
 Esto levanta:
+
 - **PostgreSQL** en `localhost:5432`
 - **Backend API** en `localhost:8000` (docs en `localhost:8000/docs`)
 - **Frontend BFF** en `localhost:8080` (UI en `localhost:8080`)
@@ -131,12 +133,12 @@ docker compose exec backend python -m scripts.create_admin
 
 ### Scripts de la raíz
 
-| Acción | Comando | Efecto |
-|---|---|---|
-| Desplegar cambios | `./deploy.sh` | Construye y ejecuta `up -d --build --force-recreate`. |
-| Construir imágenes | `./build.sh` | Detiene el proyecto sin borrar volúmenes y construye backend y frontend. |
-| Construir un servicio | `./build.sh frontend` | Detiene el proyecto y construye solo el servicio indicado. |
-| Detener servicios | `./down.sh` | Ejecuta `docker compose down` sin propagar opciones para borrar volúmenes. |
+| Acción                | Comando               | Efecto                                                                     |
+| --------------------- | --------------------- | -------------------------------------------------------------------------- |
+| Desplegar cambios     | `./deploy.sh`         | Construye y ejecuta `up -d --build --force-recreate`.                      |
+| Construir imágenes    | `./build.sh`          | Detiene el proyecto sin borrar volúmenes y construye backend y frontend.   |
+| Construir un servicio | `./build.sh frontend` | Detiene el proyecto y construye solo el servicio indicado.                 |
+| Detener servicios     | `./down.sh`           | Ejecuta `docker compose down` sin propagar opciones para borrar volúmenes. |
 
 Los datos de PostgreSQL se conservan en el volumen nombrado `postgres_data`.
 No uses `docker compose down -v` salvo que exista un respaldo verificado y se
@@ -206,29 +208,29 @@ uvicorn app.main:app --reload --port 8080
 
 ### Backend (`backend/.env`)
 
-| Variable | Descripción | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | URL de conexión PostgreSQL | Requerida |
-| `SECRET_KEY` | Clave secreta JWT (generar con `openssl rand -hex 32`) | Requerida |
-| `ALGORITHM` | Algoritmo JWT | `HS256` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiración token | `60` |
-| `CORS_ORIGINS` | Orígenes CORS permitidos | `["http://localhost:8080"]` |
-| `APP_NAME` | Nombre de la app | `Bunker4 Alumnos API` |
-| `DEBUG` | Modo debug | `false` |
-| `LOG_LEVEL` | Nivel de log | `INFO` |
+| Variable                      | Descripción                                            | Default                     |
+| ----------------------------- | ------------------------------------------------------ | --------------------------- |
+| `DATABASE_URL`                | URL de conexión PostgreSQL                             | Requerida                   |
+| `SECRET_KEY`                  | Clave secreta JWT (generar con `openssl rand -hex 32`) | Requerida                   |
+| `ALGORITHM`                   | Algoritmo JWT                                          | `HS256`                     |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiración token                                       | `60`                        |
+| `CORS_ORIGINS`                | Orígenes CORS permitidos                               | `["http://localhost:8080"]` |
+| `APP_NAME`                    | Nombre de la app                                       | `Bunker4 Alumnos API`       |
+| `DEBUG`                       | Modo debug                                             | `false`                     |
+| `LOG_LEVEL`                   | Nivel de log                                           | `INFO`                      |
 
 ### Frontend (`frontend/.env`)
 
-| Variable | Descripción | Default |
-|----------|-------------|---------|
-| `BACKEND_URL` | URL del backend API | `http://backend:8000` (Docker) / `http://localhost:8000` (local) |
-| `SECRET_KEY` | Clave secreta JWT (misma que backend) | Requerida |
-| `ALGORITHM` | Algoritmo JWT | `HS256` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiración token | `60` |
-| `CORS_ORIGINS` | Orígenes CORS permitidos | `["http://localhost:8080"]` |
-| `APP_NAME` | Nombre de la app | `Bunker4 Alumnos Frontend` |
-| `DEBUG` | Modo debug | `false` |
-| `LOG_LEVEL` | Nivel de log | `INFO` |
+| Variable                      | Descripción                           | Default                                                          |
+| ----------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| `BACKEND_URL`                 | URL del backend API                   | `http://backend:8000` (Docker) / `http://localhost:8000` (local) |
+| `SECRET_KEY`                  | Clave secreta JWT (misma que backend) | Requerida                                                        |
+| `ALGORITHM`                   | Algoritmo JWT                         | `HS256`                                                          |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiración token                      | `60`                                                             |
+| `CORS_ORIGINS`                | Orígenes CORS permitidos              | `["http://localhost:8080"]`                                      |
+| `APP_NAME`                    | Nombre de la app                      | `Bunker4 Alumnos Frontend`                                       |
+| `DEBUG`                       | Modo debug                            | `false`                                                          |
+| `LOG_LEVEL`                   | Nivel de log                          | `INFO`                                                           |
 
 ## Testing
 
@@ -254,67 +256,71 @@ pytest --cov=app --cov-report=term-missing
 
 ### Docker Compose
 
-| Acción | Comando |
-|--------|---------|
-| Desplegar todo | `./deploy.sh` |
-| Levantar solo DB | `docker compose up -d postgres` |
-| Bajar todo | `docker compose down` |
-| Resetear DB (borra datos) | `docker compose down -v` |
-| Logs backend | `docker compose logs -f backend` |
-| Logs frontend | `docker compose logs -f frontend` |
-| Logs DB | `docker compose logs -f postgres` |
-| Shell en backend | `docker compose exec backend bash` |
-| Shell en frontend | `docker compose exec frontend bash` |
+| Acción                    | Comando                             |
+| ------------------------- | ----------------------------------- |
+| Desplegar todo            | `./deploy.sh`                       |
+| Levantar solo DB          | `docker compose up -d postgres`     |
+| Bajar todo                | `docker compose down`               |
+| Resetear DB (borra datos) | `docker compose down -v`            |
+| Logs backend              | `docker compose logs -f backend`    |
+| Logs frontend             | `docker compose logs -f frontend`   |
+| Logs DB                   | `docker compose logs -f postgres`   |
+| Shell en backend          | `docker compose exec backend bash`  |
+| Shell en frontend         | `docker compose exec frontend bash` |
 
 ### Backend (dentro de `backend/`)
 
-| Acción | Comando |
-|--------|---------|
-| Instalar deps | `pip install -r requirements.txt` |
-| Migraciones | `alembic upgrade head` |
-| Nueva migración | `alembic revision --autogenerate -m "descripcion"` |
-| Tests | `TEST_DATABASE_URL=... ALLOW_TEST_DATABASE_RESET=true pytest` |
-| Lint | `ruff check .` |
-| Formato | `ruff format .` |
-| Type check | `mypy --strict app/` |
-| Crear admin | `python -m scripts.create_admin` |
-| Servidor dev | `uvicorn app.main:app --reload` |
+| Acción          | Comando                                                       |
+| --------------- | ------------------------------------------------------------- |
+| Instalar deps   | `pip install -r requirements.txt`                             |
+| Migraciones     | `alembic upgrade head`                                        |
+| Nueva migración | `alembic revision --autogenerate -m "descripcion"`            |
+| Tests           | `TEST_DATABASE_URL=... ALLOW_TEST_DATABASE_RESET=true pytest` |
+| Lint            | `ruff check .`                                                |
+| Formato         | `ruff format .`                                               |
+| Type check      | `mypy --strict app/`                                          |
+| Crear admin     | `python -m scripts.create_admin`                              |
+| Servidor dev    | `uvicorn app.main:app --reload`                               |
 
 ### Frontend (dentro de `frontend/`)
 
-| Acción | Comando |
-|--------|---------|
+| Acción        | Comando                           |
+| ------------- | --------------------------------- |
 | Instalar deps | `pip install -r requirements.txt` |
-| Lint | `ruff check .` |
-| Formato | `ruff format .` |
-| Type check | `mypy --strict app/` |
-| Servidor dev | `uvicorn app.main:app --reload` |
+| Lint          | `ruff check .`                    |
+| Formato       | `ruff format .`                   |
+| Type check    | `mypy --strict app/`              |
+| Servidor dev  | `uvicorn app.main:app --reload`   |
 
 ## Ambientes de Base de Datos
 
 El proyecto soporta **dos ambientes**:
 
-| Entorno | Descripción | Conexión |
-|---------|-------------|----------|
-| **Local (Docker)** | PostgreSQL 16 via Docker Compose | `postgresql+psycopg://postgres:postgres@postgres:5432/bunker4_alumnos` |
-| **Local (Host)** | PostgreSQL 16 via Docker Compose, app en host | `postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos` |
-| **Remoto (Proxmox)** | PostgreSQL 16 en servidor Proxmox | SSH tunnel / VPN + `DATABASE_URL` en `.env` |
+| Entorno              | Descripción                                   | Conexión                                                                |
+| -------------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| **Local (Docker)**   | PostgreSQL 16 via Docker Compose              | `postgresql+psycopg://postgres:postgres@postgres:5432/bunker4_alumnos`  |
+| **Local (Host)**     | PostgreSQL 16 via Docker Compose, app en host | `postgresql+psycopg://postgres:postgres@localhost:5432/bunker4_alumnos` |
+| **Remoto (Proxmox)** | PostgreSQL 16 en servidor Proxmox             | SSH tunnel / VPN + `DATABASE_URL` en `.env`                             |
 
 Ambos ambientes usan la misma cadena de migraciones (Alembic). La variable `DATABASE_URL` en `.env` del backend determina el target.
 
 ## Arquitectura BFF (Backend for Frontend)
 
 El **frontend** actúa como BFF:
+
 1. Sirve templates HTML (Jinja2) y archivos estáticos
 2. Proxy transparente: todas las llamadas `/api/v1/*` se reenvían al **backend**
 3. Maneja autenticación: valida tokens con el backend via `/api/v1/auth/me`
 4. Inyecta token en requests proxificados al backend
 
 Esto permite:
+
 - Separación clara de responsabilidades
 - Backend pura API REST (reutilizable por otros clientes)
 - Frontend independiente, escalable por separado
 - Migración futura a SPA (React/Vue) sin tocar backend
+
+Línea cualquiera.
 
 ## Licencia
 
