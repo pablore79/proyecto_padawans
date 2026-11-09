@@ -18,7 +18,7 @@ spec:
       containers:
         - name: frontend
           # Construir y subir al registry de microk8s (ver manifests/README.md)
-          image: harbor.perfeccion.ar/tanque/proyecto_padawans-frontend:0.1           
+          image: harbor.perfeccion.ar/tanque/proyecto_padawans-frontend:0.1
           imagePullPolicy: Always
           ports:
             - name: http
@@ -55,11 +55,31 @@ metadata:
   labels:
     app: frontend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: frontend
   ports:
     - name: http
-      port: 8080
+      port: 8000
       targetPort: http
-      nodePort: 30080
+---
+# Service LoadBalancer para acceso externo
+# Hecho en base a https://microk8s.io/docs/addon-metallb
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-bunker4-loadbalancer
+  namespace: bunker4
+  labels:
+    app: frontend
+  annotations:
+    metallb.universe.tf/address-pool: default-addresspool
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: http
+      name: http
+  type: LoadBalancer
